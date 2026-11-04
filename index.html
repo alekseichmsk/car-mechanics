@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="car-build" content="iphone12pm-2">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -14,10 +18,17 @@
     --good: #86f0b0;
     --bad: #ff5a45;
   }
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
   html, body {
     margin: 0;
     height: 100%;
+    height: 100dvh;
     overflow: hidden;
     background: #8ea4b4;
     color: var(--ink);
@@ -25,15 +36,23 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
   }
-  #view { display: block; width: 100%; height: 100%; }
-  #hud, #touch, #hint { position: fixed; z-index: 2; }
+  body { position: fixed; inset: 0; width: 100%; }
+  #view { display: block; width: 100%; height: 100%; touch-action: none; }
+  #hud, #touch, #hint, #rotate { position: fixed; z-index: 2; }
   #hud {
     top: 0; left: 0; right: 0;
-    padding: calc(8px + env(safe-area-inset-top)) 10px 0;
+    padding:
+      calc(6px + env(safe-area-inset-top, 0px))
+      calc(8px + env(safe-area-inset-right, 0px))
+      0
+      calc(8px + env(safe-area-inset-left, 0px));
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     pointer-events: none;
   }
   #cluster {
@@ -78,11 +97,24 @@
   #rpmfill.hot { background: var(--bad); }
   #rpm { font-size: 12px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; opacity: 0.85; }
   #modes { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; pointer-events: auto; }
+  #modes button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  #modes button[data-drive]::before { content: attr(data-drive); }
+  #forces svg, #reset svg { width: 18px; height: 18px; }
   #wheels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
-    max-width: 440px;
+    max-width: 720px;
     pointer-events: none;
   }
   .wcard { padding: 6px 8px; }
@@ -104,9 +136,11 @@
     font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
   }
   .swatch i { width: 12px; height: 12px; border-radius: 99px; display: block; }
+  #hint::before { content: "WASD or arrows · Space handbrake · 1 FWD · 2 RWD · 3 AWD · F forces · R reset"; }
   #hint {
-    left: 10px; right: 10px;
-    bottom: calc(92px + env(safe-area-inset-bottom));
+    left: calc(8px + env(safe-area-inset-left, 0px));
+    right: calc(8px + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--pad-h, 108px) + 8px + env(safe-area-inset-bottom, 0px));
     margin: 0;
     text-align: center;
     font-size: 11px;
@@ -115,35 +149,82 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     pointer-events: none;
   }
+  #rotate::before { content: "Rotate to landscape"; }
+  #rotate {
+    display: none;
+    top: env(safe-area-inset-top, 0px);
+    left: env(safe-area-inset-left, 0px);
+    right: env(safe-area-inset-right, 0px);
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 10, 12, 0.9);
+    color: var(--amber);
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
   #touch {
     left: 0; right: 0; bottom: 0;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     gap: 8px;
-    padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+    padding:
+      0
+      calc(12px + env(safe-area-inset-right, 0px))
+      calc(10px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
     pointer-events: none;
+    z-index: 3;
   }
-  .steer, .pedals { display: flex; gap: 8px; align-items: flex-end; pointer-events: auto; }
+  .steer, .pedals { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
   button {
     appearance: none;
     border: 1px solid var(--line);
     background: var(--panel);
     color: var(--ink);
-    border-radius: 16px;
-    min-width: 64px;
-    min-height: 64px;
-    padding: 0 10px;
+    border-radius: 18px;
+    padding: 0;
     font: inherit;
     font-weight: 750;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     touch-action: none;
   }
-  button:active, button.on { background: var(--amber); color: #1c1404; border-color: transparent; }
-  #gas { min-width: 84px; min-height: 84px; background: #d3541a; color: white; border-color: transparent; }
-  #gas:active { background: #ff8a4a; }
-  #brake { background: #243140; }
-  #handbrake { background: #6e2424; }
+  button svg {
+    width: 44px;
+    height: 44px;
+    display: block;
+    pointer-events: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  button:active, button.held, button.on { background: var(--amber); color: #1c1404; border-color: transparent; }
+  #steerL, #steerR, #brake, #handbrake, #gas, #forces, #reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #steerL, #steerR, #brake, #handbrake {
+    width: 92px;
+    height: 92px;
+  }
+  #gas {
+    width: 108px;
+    height: 108px;
+    font-size: 18px;
+    background: #d3541a;
+    color: white;
+    border-color: transparent;
+  }
+  #gas:active, #gas.held { background: #ff8a4a; color: white; }
+  #brake { background: #243140; font-size: 13px; }
+  #handbrake { background: #6e2424; font-size: 16px; }
   #err {
     display: none;
     position: fixed;
@@ -156,24 +237,35 @@
     font-family: ui-monospace, monospace;
     font-size: 13px;
   }
-  @media (min-width: 840px) {
-    #speed { font-size: 52px; }
-    button { min-width: 76px; min-height: 76px; }
-    #gas { min-width: 100px; min-height: 100px; }
-    #hint { bottom: calc(112px + env(safe-area-inset-bottom)); }
+  /* iPhone 12 Pro Max landscape is 926x428. Keep the HUD to one band. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #legend, #hint, .meter-label { display: none; }
+    #speed { font-size: 28px; }
+    #gear { font-size: 22px; }
+    #unit, #rpm { font-size: 10px; }
+    #rpmwrap { margin: 3px 0 2px; }
+    .panel { padding: 4px 8px; }
+    .wcard { padding: 3px 6px; }
+    .wsurf { font-size: 10px; margin: 0 0 2px; }
+    #hud { gap: 4px; }
+    #cluster { flex-wrap: nowrap; align-items: center; }
+    #modes button { min-height: 30px; padding: 0 8px; }
   }
-  @media (max-width: 520px) {
-    #touch { padding-left: 8px; padding-right: 8px; gap: 6px; }
-    .steer, .pedals { gap: 6px; }
-    #steerL, #steerR, #handbrake, #brake {
-      width: 60px; min-width: 60px; min-height: 60px; padding: 0; font-size: 12px;
+  @media (orientation: portrait) {
+    #rotate { display: flex; }
+    #hud {
+      top: calc(32px + env(safe-area-inset-top, 0px));
+      padding-top: 6px;
     }
-    #gas { width: 72px; min-width: 72px; min-height: 72px; padding: 0; }
-  }
-  @media (max-height: 520px) {
-    #legend, #hint { display: none; }
-    #speed { font-size: 32px; }
+    #legend, #hint, .meter-label { display: none; }
     .wcard { padding: 4px 6px; }
+    .wsurf { font-size: 10px; margin: 0 0 2px; }
+    .pedals { flex-direction: column; align-items: flex-end; }
+  }
+  @media (min-width: 1100px) and (min-height: 700px) {
+    #speed { font-size: 52px; }
+    #legend { display: flex; }
+    #hint { display: block; }
   }
 </style>
 <script type="importmap">
@@ -186,6 +278,7 @@
 </head>
 <body>
 <canvas id="view"></canvas>
+<div id="rotate" role="status"></div>
 <div id="hud">
   <div id="cluster">
     <div id="speedbox" class="panel">
@@ -198,26 +291,30 @@
       <div id="rpm">900 RPM</div>
     </div>
     <div id="modes" class="panel">
-      <button type="button" data-drive="FWD">FWD</button>
-      <button type="button" data-drive="RWD" class="on">RWD</button>
-      <button type="button" data-drive="AWD">AWD</button>
-      <button type="button" id="forces">Forces</button>
-      <button type="button" id="reset">Reset</button>
+      <button type="button" data-drive="FWD" aria-label="Front-wheel drive"></button>
+      <button type="button" data-drive="RWD" class="on" aria-label="Rear-wheel drive"></button>
+      <button type="button" data-drive="AWD" aria-label="All-wheel drive"></button>
+      <button type="button" id="forces" aria-label="Force vectors">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V7"/><path d="M8 11l4-5 4 5"/><path d="M5 15l4 4"/><path d="M19 15l-4 4"/></svg>
+      </button>
+      <button type="button" id="reset" aria-label="Reset">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.2-5.5"/><path d="M20 4v6h-6"/></svg>
+      </button>
     </div>
   </div>
   <div id="wheels"></div>
   <div id="legend"></div>
 </div>
-<p id="hint">WASD or arrows drive · Space handbrake · 1 FWD · 2 RWD · 3 AWD · F force vectors · R reset</p>
+<p id="hint"></p>
 <div id="touch">
   <div class="steer">
-    <button type="button" id="steerL" aria-label="Steer left">◀</button>
-    <button type="button" id="steerR" aria-label="Steer right">▶</button>
+    <button type="button" id="steerL" aria-label="Steer left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19"/></svg></button>
+    <button type="button" id="steerR" aria-label="Steer right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19"/></svg></button>
   </div>
   <div class="pedals">
-    <button type="button" id="handbrake" aria-label="Handbrake">HB</button>
-    <button type="button" id="brake" aria-label="Brake">BRAKE</button>
-    <button type="button" id="gas" aria-label="Gas">GAS</button>
+    <button type="button" id="handbrake" aria-label="Handbrake"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20h8"/><path d="M12 20V9"/><circle cx="12" cy="6.2" r="2.2"/></svg></button>
+    <button type="button" id="brake" aria-label="Brake"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+    <button type="button" id="gas" aria-label="Gas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6"/><path d="M6 11l6-6 6 6"/></svg></button>
   </div>
 </div>
 <div id="err"></div>
@@ -647,7 +744,7 @@ const state = {
 const input = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
 let scripted = null;
 const keys = new Set();
-const touch = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
+const touch = { throttle: 0, brake: 0, steerL: 0, steerR: 0, handbrake: 0 };
 
 function staticCompression() {
   const fz = (CONFIG.chassis.mass * CONFIG.physics.gravity) / CONFIG.wheels.length;
@@ -755,7 +852,7 @@ function readInput() {
   const keyH = keys.has("Space") ? 1 : 0;
   input.throttle = Math.max(keyT, touch.throttle);
   input.brake = Math.max(keyB, touch.brake);
-  input.steer = clamp((keyR - keyL) + touch.steer, -1, 1);
+  input.steer = clamp((keyR - keyL) + (touch.steerR - touch.steerL), -1, 1);
   input.handbrake = Math.max(keyH, touch.handbrake);
 }
 
@@ -1271,8 +1368,13 @@ const renderer = new THREE.WebGLRenderer({
   preserveDrawingBuffer: true,
   failIfMajorPerformanceCaveat: false,
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
-renderer.setSize(window.innerWidth, window.innerHeight);
+function fitRenderer() {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+}
+fitRenderer();
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1785,21 +1887,24 @@ function setDebug(on) {
 }
 
 function bindHold(el, down, up) {
-  let held = false;
+  const ids = new Set();
+  const sync = () => el.classList.toggle("held", ids.size > 0);
   el.addEventListener("pointerdown", (e) => {
-    held = true;
-    el.setPointerCapture(e.pointerId);
-    down();
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    ids.add(e.pointerId);
+    try { el.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events have no capture */ }
+    if (ids.size === 1) down();
+    sync();
     e.preventDefault();
   });
-  const release = () => {
-    if (!held) return;
-    held = false;
-    up();
+  const end = (e) => {
+    if (!ids.has(e.pointerId)) return;
+    ids.delete(e.pointerId);
+    if (ids.size === 0) up();
+    sync();
   };
-  el.addEventListener("pointerup", release);
-  el.addEventListener("pointercancel", release);
-  el.addEventListener("lostpointercapture", release);
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
 }
 
 function bindInput() {
@@ -1818,20 +1923,44 @@ function bindInput() {
   bindHold(document.getElementById("gas"), () => { touch.throttle = 1; }, () => { touch.throttle = 0; });
   bindHold(document.getElementById("brake"), () => { touch.brake = 1; }, () => { touch.brake = 0; });
   bindHold(document.getElementById("handbrake"), () => { touch.handbrake = 1; }, () => { touch.handbrake = 0; });
-  bindHold(document.getElementById("steerL"), () => { touch.steer = -1; }, () => { touch.steer = 0; });
-  bindHold(document.getElementById("steerR"), () => { touch.steer = 1; }, () => { touch.steer = 0; });
+  bindHold(document.getElementById("steerL"), () => { touch.steerL = 1; }, () => { touch.steerL = 0; });
+  bindHold(document.getElementById("steerR"), () => { touch.steerR = 1; }, () => { touch.steerR = 0; });
+  const swallow = (e) => e.preventDefault();
+  const guard = (el) => {
+    el.addEventListener("touchstart", swallow, { passive: false });
+    el.addEventListener("touchmove", swallow, { passive: false });
+    el.addEventListener("contextmenu", swallow);
+    el.addEventListener("selectstart", swallow);
+  };
+  guard(document);
+  guard(document.body);
+  for (const el of document.querySelectorAll("button, #hud, #touch, #rotate, #hint, #legend")) guard(el);
+  document.addEventListener("gesturestart", swallow, { passive: false });
+  document.addEventListener("gesturechange", swallow, { passive: false });
+  document.addEventListener("dblclick", swallow);
   for (const b of document.querySelectorAll("[data-drive]")) {
-    b.addEventListener("click", () => setDrive(b.dataset.drive));
+    b.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      setDrive(b.dataset.drive);
+      e.preventDefault();
+    });
   }
-  document.getElementById("forces").addEventListener("click", () => setDebug(!state.debug));
-  document.getElementById("reset").addEventListener("click", () => reset());
-  document.addEventListener("contextmenu", (e) => e.preventDefault());
+  document.getElementById("forces").addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    setDebug(!state.debug);
+    e.preventDefault();
+  });
+  document.getElementById("reset").addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    reset();
+    e.preventDefault();
+  });
 }
 
 window.addEventListener("resize", () => {
+  fitRenderer();
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 function plain(v) { return { x: v.x, y: v.y, z: v.z }; }
@@ -1945,6 +2074,12 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
+    build: "iphone12pm-2",
+    pixelRatio: () => renderer.getPixelRatio(),
+    controls() {
+      readInput();
+      return { throttle: input.throttle, brake: input.brake, steer: input.steer, handbrake: input.handbrake };
+    },
   };
   console.log("car ready");
   if (!manual) requestAnimationFrame(frame);
