@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="voyage-5432f">
+<meta name="car-build" content="voyage-5432g">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -187,27 +187,16 @@
     opacity: 0.9;
   }
   #rainfx.on, #snowfx.on, #hazefx.on { display: block; }
-  #seedchip {
-    position: fixed;
-    z-index: 6;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(var(--pad-h, 108px) + 26px + env(safe-area-inset-bottom, 0px));
-    pointer-events: auto;
-    min-height: 34px;
-    padding: 0 10px;
-    border-radius: 10px;
-    font-weight: 750;
-    letter-spacing: 0.04em;
-  }
+  #seedchip { display: none; }
+  #wheels, #legend, #wear, #hint, #rpm, #rpmwrap, #temp, #batt, #odo, #forces { display: none !important; }
   #newseed::before { content: "НОВЫЙ СИД"; }
+  #seedline { font-size: 12px; letter-spacing: 0.04em; }
   #worldmenu {
     position: fixed;
     z-index: 6;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(var(--pad-h, 108px) + 68px + env(safe-area-inset-bottom, 0px));
-    width: min(250px, calc(100vw - 24px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    top: 200px;
+    width: min(250px, calc(100vw - 90px));
     display: none;
     flex-direction: column;
     gap: 6px;
@@ -419,6 +408,7 @@
     #side button { width: 38px; height: 38px; }
     #extra { top: 132px; }
     #extra button { width: 36px; height: 36px; }
+    #worldmenu { top: 176px; }
     .tbar { width: 44px; }
   }
   @media (orientation: portrait) {
@@ -485,6 +475,7 @@
 </div>
 <div id="extra">
   <button type="button" id="rocks" aria-label="Камни"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l5-8 3 4 2-3 6 7z"/><path d="M8 8l1.2-2L12 8"/></svg></button>
+  <button type="button" id="menubtn" aria-label="Погода"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h16"/><circle cx="17" cy="12" r="2"/></svg></button>
   <button type="button" id="camhold" aria-label="Камера"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 14-5"/><path d="M20 12a8 8 0 0 1-14 5"/></svg></button>
 </div>
 <div id="side">
@@ -497,8 +488,8 @@
 <div id="rainfx"></div>
 <div id="snowfx"></div>
 <div id="hazefx"></div>
-<button type="button" id="seedchip" class="panel" aria-label="Мир"></button>
 <div id="worldmenu" class="panel">
+  <div id="seedline"></div>
   <div id="bioline"></div>
   <div class="wx">
     <button type="button" data-wx="auto" aria-label="Авто"></button>
@@ -555,8 +546,8 @@ import * as THREE from "three";
 const CONFIG = {
   physics: {
     fixedDt: 1 / 120,
-    maxSubsteps: 8,
-    maxFrame: 0.05,
+    maxSubsteps: 24,
+    maxFrame: 0.2,
     gravity: 9.81,
   },
   spawn: { x: 0, z: 4 },
@@ -1624,17 +1615,25 @@ function rebuildRoad() {
   ensureRoad(state.position.z);
 }
 
+function paddockDry(z) {
+  // The spawn straight stays dry asphalt so a winter or rain seed cannot pin the car.
+  return 1 - smoothstep(ROAD.plain * 0.42, ROAD.plain * 0.82, Math.abs(z));
+}
+
 function updateClimate() {
-  const blend = biomeBlend(state.position.z);
+  const z = state.position.z;
+  const blend = biomeBlend(z);
   state.biome = blend.biome;
   state.biomeNext = blend.next;
-  state.biomeT = blend.t;
+  state.biomeT = blend.t * (1 - paddockDry(z));
   const snowing = state.weatherMode === "snow" || blend.biome === "winter" || (blend.next === "winter" && blend.t > 0.4);
   const raining = !snowing && (state.weatherMode === "rain" || blend.biome === "rain" || (blend.next === "rain" && blend.t > 0.4));
-  state.snowing = snowing;
-  state.rain = raining;
-  state.dust = state.weatherMode === "desert" || blend.biome === "desert" || (blend.next === "desert" && blend.t > 0.45);
-  state.snowCover = snowing;
+  const dry = paddockDry(z);
+  state.snowing = snowing && dry < 0.85;
+  state.rain = raining && dry < 0.85;
+  state.dust = (state.weatherMode === "desert" || blend.biome === "desert" || (blend.next === "desert" && blend.t > 0.45)) && dry < 0.85;
+  state.snowCover = snowing && dry < 0.2;
+  state.rainGrip = raining && dry < 0.2;
 }
 
 function setWeather(mode) {
@@ -2375,15 +2374,15 @@ function solveTires(dt) {
     w.slipAngle += (alpha - w.slipAngle) * blend;
 
     let surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
-    if (state.rain && (w.surface === "asphalt" || w.surface === "wet")) {
+    if (state.rainGrip && (w.surface === "asphalt" || w.surface === "wet")) {
       const wet = CONFIG.surfaces.wet;
       surf = { mu: wet.mu, rolling: wet.rolling, sink: surf.sink, lng: wet.lng, lat: wet.lat };
       const puddle = roadHash(ROAD.seed, Math.floor(w.centerWorld.x * 2), Math.floor(w.centerWorld.z * 2));
       if (puddle > 0.84) surf = { ...surf, mu: surf.mu * 0.78 };
     }
     if (state.snowCover && (w.surface === "asphalt" || w.surface === "wet" || w.surface === "dirt" || w.surface === "grass")) {
-      const pack = CONFIG.surfaces.pack;
-      surf = { mu: pack.mu, rolling: pack.rolling, sink: surf.sink, lng: pack.lng, lat: pack.lat };
+      // Slippery, but still able to pull away in rear-wheel drive. Packed-snow mu spun the wheels in place.
+      surf = { ...surf, mu: Math.min(surf.mu * 0.62, 0.55), rolling: surf.rolling + 0.01 };
     }
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
@@ -4149,8 +4148,11 @@ function updateHud() {
   if (lights) lights.classList.toggle("on", state.lights > 0);
   if (wipers) wipers.classList.toggle("on", state.wipers);
   if (rainBtn) rainBtn.classList.toggle("on", state.rain || state.weatherMode === "rain");
-  const chip = document.getElementById("seedchip");
-  if (chip) chip.textContent = `СИД ${ROAD.seed}`;
+  const seedLine = document.getElementById("seedline");
+  if (seedLine) seedLine.textContent = `СИД ${ROAD.seed}`;
+  const menuBtn = document.getElementById("menubtn");
+  const menu = document.getElementById("worldmenu");
+  if (menuBtn && menu) menuBtn.classList.toggle("on", menu.classList.contains("open"));
   const bio = document.getElementById("bioline");
   if (bio) {
     const name = (BIOMES[state.biome] && BIOMES[state.biome].ru) || "";
@@ -4295,7 +4297,7 @@ function bindInput() {
   toggle("lights", () => { state.lights = (state.lights + 1) % 3; });
   toggle("wipers", () => { state.wipers = !state.wipers; });
   toggle("rainbtn", () => { setWeather(state.weatherMode === "rain" ? "auto" : "rain"); });
-  toggle("seedchip", () => {
+  toggle("menubtn", () => {
     const menu = document.getElementById("worldmenu");
     if (menu) menu.classList.toggle("open");
   });
@@ -4524,7 +4526,7 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "voyage-5432f",
+    build: "voyage-5432g",
     setWeather,
     setSeed,
     auditSeed,
