@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="iphone12pm-2">
+<meta name="car-build" content="iphone12pm-3">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -109,6 +109,7 @@
     letter-spacing: 0.04em;
   }
   #modes button[data-drive]::before { content: attr(data-drive); }
+  #tc::before { content: "TC"; }
   #forces svg, #reset svg { width: 18px; height: 18px; }
   #wheels {
     display: grid;
@@ -294,6 +295,7 @@
       <button type="button" data-drive="FWD" aria-label="Front-wheel drive"></button>
       <button type="button" data-drive="RWD" class="on" aria-label="Rear-wheel drive"></button>
       <button type="button" data-drive="AWD" aria-label="All-wheel drive"></button>
+      <button type="button" id="tc" aria-label="Traction control"></button>
       <button type="button" id="forces" aria-label="Force vectors">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V7"/><path d="M8 11l4-5 4 5"/><path d="M5 15l4 4"/><path d="M19 15l-4 4"/></svg>
       </button>
@@ -418,6 +420,8 @@ const CONFIG = {
     wheelspinSpeed: 8,
   },
   clutch: { maxTorque: 360, idleCap: 5, idleThrottle: 0.1, idleRpmFactor: 1.08 },
+  // Light traction control. Off by default so loose surfaces can still spin a wheel.
+  tc: { slip: 0.16, gain: 2.5, min: 0.42 },
   // Axle share of torque. Each wheel on that axle gets an equal part. Shares sum to 1.
   drive: {
     defaultMode: "RWD",
@@ -427,24 +431,29 @@ const CONFIG = {
       AWD: { front: 0.4, rear: 0.6 },
     },
   },
+  // mu is peak friction. lng/lat are Pacejka shapes: C near 1.2 keeps force high past the peak
+  // (progressive slide); C near 1.55 lets it fall off. sink is 1/s, drag = sink * Fz * speed.
   surfaces: {
-    asphalt: { mu: 1.08, rolling: 0.013, color: "#4c5158" },
-    wet: { mu: 0.58, rolling: 0.018, color: "#3c4c5c" },
-    dirt: { mu: 0.52, rolling: 0.05, color: "#8d5e34" },
-    grass: { mu: 0.36, rolling: 0.075, color: "#3e7a34" },
-    sand: { mu: 0.3, rolling: 0.15, color: "#c6a15a" },
-    ice: { mu: 0.11, rolling: 0.004, color: "#d5e7f0" },
+    asphalt: { mu: 1.0, rolling: 0.012, sink: 0, lng: { B: 11.5, C: 1.58, E: 0.97 }, lat: { B: 8.4, C: 1.52, E: 0.97 }, color: "#4a4f56" },
+    wet: { mu: 0.7, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
+    dirt: { mu: 0.7, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
+    grass: { mu: 0.6, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
+    sand: { mu: 0.6, rolling: 0.04, sink: 0.014, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
+    ice: { mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
   },
   track: {
     defaultSurface: "grass",
-    mesh: { minX: -70, maxX: 80, minZ: -30, maxZ: 280, res: 2 },
-    // First matching rectangle wins. x,z is the min corner.
+    blend: 2.6,
+    mesh: { minX: -80, maxX: 84, minZ: -40, maxZ: 420, res: 2 },
+    // First matching rectangle wins. x,z is the min corner. Long lanes so each surface can be driven.
     zones: [
-      { surface: "ice", x: -10, z: 168, w: 20, d: 34, mark: true },
-      { surface: "wet", x: -10, z: 214, w: 20, d: 40, mark: true },
-      { surface: "sand", x: -46, z: 24, w: 28, d: 42, mark: true },
-      { surface: "dirt", x: 16, z: 86, w: 40, d: 56, mark: true },
-      { surface: "asphalt", x: -10, z: -20, w: 20, d: 290 },
+      { surface: "sand", x: -64, z: -40, w: 20, d: 420, mark: true },
+      { surface: "dirt", x: 22, z: -40, w: 18, d: 420, mark: true },
+      { surface: "wet", x: 44, z: -40, w: 16, d: 420, mark: true },
+      { surface: "ice", x: 64, z: -40, w: 16, d: 420, mark: true },
+      { surface: "wet", x: -9, z: 248, w: 18, d: 70, mark: true },
+      { surface: "ice", x: -9, z: 168, w: 18, d: 60, mark: true },
+      { surface: "asphalt", x: -9, z: -40, w: 18, d: 440 },
     ],
     features: [
       { type: "bump", x: -10, z: 62, w: 20, d: 3.2, height: 0.16 },
@@ -458,15 +467,17 @@ const CONFIG = {
       { text: "RAMP", x: 14, z: 136, color: "#ffbf3c" },
       { text: "ICE", x: 14, z: 184, color: "#e7f4fb" },
       { text: "WET", x: 14, z: 232, color: "#b7d4ea" },
-      { text: "SAND", x: -32, z: 44, color: "#f0ddb0" },
-      { text: "DIRT", x: 36, z: 112, color: "#f0c49a" },
+      { text: "SAND", x: -54, z: 18, color: "#f0ddb0" },
+      { text: "DIRT", x: 31, z: 18, color: "#f0c49a" },
+      { text: "WET LANE", x: 52, z: 18, color: "#b7d4ea" },
+      { text: "ICE LANE", x: 72, z: 18, color: "#e7f4fb" },
       { text: "GRASS", x: -28, z: 12, color: "#d5f0c8" },
     ],
   },
-  skid: { slip: 0.34, spacing: 0.14, pool: 420 },
-  particles: { life: 0.8, pool: 280 },
+  skid: { slip: 0.32, spacing: 0.18, pool: 260 },
+  particles: { life: 0.55, pool: 160 },
   debug: { forceScale: 0.00055 },
-  camera: { fov: 48, distance: 7.1, height: 2.05, side: 2.55, lookHeight: 0.5, stiffness: 4.2 },
+  camera: { fov: 46, distance: 7.6, height: 2.15, side: 3.5, lookHeight: 0.55, stiffness: 4.2 },
 };
 
 // ---------------------------------------------------------------------------
@@ -612,6 +623,35 @@ function surfaceAt(x, z) {
   return CONFIG.track.defaultSurface;
 }
 
+// Blend grip a couple of metres across a zone edge so the car doesn't hit a friction cliff.
+function surfaceParams(x, z) {
+  const radius = CONFIG.track.blend;
+  const samples = [[0, 0, 3], [radius, 0, 1], [-radius, 0, 1], [0, radius, 1], [0, -radius, 1]];
+  let wsum = 0;
+  const acc = { mu: 0, rolling: 0, sink: 0, lB: 0, lC: 0, lE: 0, aB: 0, aC: 0, aE: 0 };
+  for (const [dx, dz, w] of samples) {
+    const s = CONFIG.surfaces[surfaceAt(x + dx, z + dz)] || CONFIG.surfaces.grass;
+    acc.mu += s.mu * w;
+    acc.rolling += s.rolling * w;
+    acc.sink += s.sink * w;
+    acc.lB += s.lng.B * w;
+    acc.lC += s.lng.C * w;
+    acc.lE += s.lng.E * w;
+    acc.aB += s.lat.B * w;
+    acc.aC += s.lat.C * w;
+    acc.aE += s.lat.E * w;
+    wsum += w;
+  }
+  const k = 1 / wsum;
+  return {
+    mu: acc.mu * k,
+    rolling: acc.rolling * k,
+    sink: acc.sink * k,
+    lng: { B: acc.lB * k, C: acc.lC * k, E: acc.lE * k },
+    lat: { B: acc.aB * k, C: acc.aC * k, E: acc.aE * k },
+  };
+}
+
 function featureHeight(x, z, f) {
   const u = (x - f.x) / f.w;
   const v = (z - f.z) / f.d;
@@ -734,6 +774,7 @@ const state = {
   engineOmega: 0,
   steer: 0,
   driveMode: CONFIG.drive.defaultMode,
+  tc: false,
   debug: false,
   time: 0,
   tick: 0,
@@ -1050,7 +1091,16 @@ function solvePowertrain(dt) {
   state.engineOmega = clamp(state.engineOmega, 0, limit * 1.02);
 
   const wheelTorque = clutchTorque * totalRatio * box.efficiency;
-  for (let i = 0; i < wheels.length; i++) wheels[i].driveTorque = wheelTorque * shares[i];
+  for (let i = 0; i < wheels.length; i++) {
+    let torque = wheelTorque * shares[i];
+    if (state.tc && shares[i] > 0) {
+      const slip = Math.abs(wheels[i].slipRatio);
+      if (slip > CONFIG.tc.slip) {
+        torque *= clamp(1 - (slip - CONFIG.tc.slip) * CONFIG.tc.gain, CONFIG.tc.min, 1);
+      }
+    }
+    wheels[i].driveTorque = torque;
+  }
 
   state.shiftTimer = Math.max(0, state.shiftTimer - dt);
   state.shiftCooldown = Math.max(0, state.shiftCooldown - dt);
@@ -1102,6 +1152,7 @@ function solveTires(dt) {
       w.slipAngle += (0 - w.slipAngle) * 0.2;
       continue;
     }
+    w.grip = surfaceParams(w.centerWorld.x, w.centerWorld.z);
     const kappa = (w.omega * w.spec.radius - w.vLong) / Math.max(Math.abs(w.vLong), CONFIG.tire.kappaFloor);
     const alpha = Math.atan2(w.vLat, Math.max(Math.abs(w.vLong), CONFIG.tire.alphaFloor));
     const rate = Math.max(Math.hypot(w.vLong, w.vLat), 2) / CONFIG.tire.relaxation;
@@ -1109,11 +1160,11 @@ function solveTires(dt) {
     w.slipRatio += (kappa - w.slipRatio) * blend;
     w.slipAngle += (alpha - w.slipAngle) * blend;
 
-    const surf = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
+    const surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
     const peak = surf.mu * w.fz * load;
-    let fx = magic(w.slipRatio, CONFIG.tire.longitudinal) * peak;
-    let fy = -magic(w.slipAngle, CONFIG.tire.lateral) * peak;
+    let fx = magic(w.slipRatio, surf.lng) * peak;
+    let fy = -magic(w.slipAngle, surf.lat) * peak;
     const rho = Math.hypot(fx / peak, fy / peak);
     if (rho > 1) {
       fx /= rho;
@@ -1130,13 +1181,15 @@ function applyContactForces() {
     applyForce(w.contact, mul(w.normal, w.fz));
     applyForce(w.contact, mul(w.forward, w.fx));
     applyForce(w.contact, mul(w.right, w.fy));
-    const surf = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
+    const surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
     const vel = velocityAt(w.centerWorld);
     const tangent = sub(vel, mul(w.normal, dot(vel, w.normal)));
     const hs = vecLen(tangent);
     if (hs > 0.04 && w.fz > 0) {
-      const mag = surf.rolling * w.fz * Math.min(1, hs / 0.8);
-      applyForce(w.contact, mul(tangent, -mag / hs));
+      // Constant rolling plus sinkage that grows with speed (loose surfaces), not a stuck-in-the-mud constant.
+      const roll = surf.rolling * w.fz * Math.min(1, hs / 1.4);
+      const sink = surf.sink * w.fz * hs;
+      applyForce(w.contact, mul(tangent, -(roll + sink) / hs));
     }
   }
   const v = state.velocity;
@@ -1300,14 +1353,14 @@ function dropSkid(w, slip) {
   m.position.set(w.contact.x, w.contact.y + 0.03, w.contact.z);
   m.rotation.set(0, Math.atan2(w.forward.x, w.forward.z), 0);
   m.scale.set(1, 1, 0.7 + Math.min(slip, 1.4) * 0.45);
-    if (w.surface === "ice") {
-      m.material.color.setHex(0x3e5564);
-      m.material.opacity = 0.8;
+    if (w.surface === "wet") {
+      m.material.color.setHex(0x1c2430);
+      m.material.opacity = 0.55;
     } else {
       m.material.color.setHex(0x141414);
-      m.material.opacity = 0.7;
+      m.material.opacity = 0.72;
     }
-}
+  }
 
 function emitSpeck(x, y, z, vx, vy, vz, color) {
   const p = specks[speckI];
@@ -1323,22 +1376,30 @@ function updateEffects(dt) {
   for (const w of wheels) {
     if (!w.inContact) continue;
     const slip = Math.hypot(w.slipRatio, w.slipAngle * 2.2);
-    if (slip <= CONFIG.skid.slip) {
+    const loose = w.surface === "sand" || w.surface === "dirt" || w.surface === "grass";
+    const paved = w.surface === "asphalt" || w.surface === "wet";
+    const spinning = Math.abs(w.slipRatio) > 0.3;
+    if (paved && slip > CONFIG.skid.slip) {
+      w.skidAcc += Math.max(Math.hypot(w.vLong, w.vLat), 1.2) * dt;
+      if (w.skidAcc >= CONFIG.skid.spacing) {
+        w.skidAcc = 0;
+        dropSkid(w, slip);
+      }
+    } else {
       w.skidAcc = 0;
-      continue;
     }
-    w.skidAcc += Math.max(Math.hypot(w.vLong, w.vLat), 1.3) * dt;
-    if (w.skidAcc >= CONFIG.skid.spacing) {
-      w.skidAcc = 0;
-      dropSkid(w, slip);
-    }
-    if (state.tick % 2 === 0 || w.surface === "ice") {
-      const spray = w.surface === "ice" ? { r: 0.92, g: 0.96, b: 1 } : { r: 0.28, g: 0.24, b: 0.22 };
+    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning);
+    if (sprayOn && state.tick % 2 === 0) {
+      const spray = w.surface === "sand" ? { r: 0.86, g: 0.72, b: 0.4 }
+        : w.surface === "dirt" ? { r: 0.55, g: 0.36, b: 0.18 }
+        : w.surface === "grass" ? { r: 0.42, g: 0.62, b: 0.28 }
+        : w.surface === "ice" ? { r: 0.9, g: 0.95, b: 1 }
+        : { r: 0.62, g: 0.62, b: 0.62 };
       const j = hash01(state.tick * 0.17 + w.spec.x * 3 + w.spec.z);
       emitSpeck(
-        w.contact.x,
-        w.contact.y + 0.12,
-        w.contact.z,
+        w.contact.x + w.right.x * 0.4,
+        w.contact.y + 0.25,
+        w.contact.z + w.right.z * 0.4,
         -w.forward.x * 0.8 + (j - 0.5) * 1.4,
         1.1 + j * 1.3,
         -w.forward.z * 0.8 + (hash01(j + 2) - 0.5) * 1.4,
@@ -1430,8 +1491,23 @@ function buildTrack() {
       normals[k + 2] = n.z;
       const surf = surfaceAt(x, z);
       color.set(CONFIG.surfaces[surf].color);
-      const shade = 0.9 + 0.1 * Math.sin(x * 0.31) * Math.sin(z * 0.23);
-      color.multiplyScalar(shade);
+      if (surf === "grass") {
+        const tuft = 0.5 + 0.5 * Math.sin(x * 1.7) * Math.sin(z * 1.45);
+        const patch = 0.5 + 0.5 * Math.sin(x * 0.33 + z * 0.21);
+        color.lerp(new THREE.Color(patch > 0.62 ? "#2c6428" : "#67a84a"), 0.28 + 0.22 * tuft);
+      } else if (surf === "dirt") {
+        const clod = 0.5 + 0.5 * Math.sin(x * 2.2 + 0.4) * Math.sin(z * 1.8);
+        color.lerp(new THREE.Color("#5c3a1e"), 0.35 * clod);
+        color.multiplyScalar(0.86 + 0.28 * clod);
+      } else if (surf === "sand") {
+        const rip = 0.5 + 0.5 * Math.sin(x * 2.8 + z * 0.55);
+        color.lerp(new THREE.Color("#e4c98a"), 0.22 * rip);
+        color.multiplyScalar(0.9 + 0.16 * rip);
+      } else if (surf === "wet") {
+        color.multiplyScalar(0.86 + 0.08 * Math.sin(x * 0.8 + z));
+      } else {
+        color.multiplyScalar(0.92 + 0.08 * Math.sin(x * 0.31) * Math.sin(z * 0.23));
+      }
       if (surf === "asphalt" && Math.abs(x) < 0.85 && (Math.floor(z / 4) % 2) === 0) {
         color.lerp(new THREE.Color("#f4f4f4"), 0.8);
       }
@@ -1545,45 +1621,51 @@ const chassis = new THREE.Group();
 scene.add(chassis);
 
 function buildCar() {
-  const paint = new THREE.MeshStandardMaterial({ color: 0xd3541a, roughness: 0.42, metalness: 0.18 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x1a2128, roughness: 0.6 });
+  const paint = new THREE.MeshStandardMaterial({ color: 0xd3541a, roughness: 0.32, metalness: 0.42 });
+  const paintDark = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.4, metalness: 0.35 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x161b20, roughness: 0.55, metalness: 0.2 });
   const glass = new THREE.MeshStandardMaterial({
-    color: 0x9fd0e4, roughness: 0.15, metalness: 0.05, transparent: true, opacity: 0.55,
+    color: 0xb7e0ef, roughness: 0.08, metalness: 0.15, transparent: true, opacity: 0.5,
   });
-  // Short central tub so the axle beams sit in the open, ahead of and behind it.
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.36, 2.05), paint);
-  body.position.y = 0.12;
-  body.castShadow = true;
-  chassis.add(body);
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.36, 1.15), dark);
-  cabin.position.set(0, 0.42, -0.12);
-  cabin.castShadow = true;
-  chassis.add(cabin);
-  const wind = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.26, 0.05), glass);
-  wind.position.set(0, 0.44, 0.46);
-  wind.rotation.x = 0.42;
-  chassis.add(wind);
-  const hood = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.1, 0.7), paint);
-  hood.position.set(0, 0.22, 0.85);
-  hood.castShadow = true;
-  chassis.add(hood);
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.16, 0.34), paint);
-  nose.position.set(0, 0.16, 1.55);
-  nose.castShadow = true;
-  chassis.add(nose);
-  for (const x of [-0.24, 0.24]) {
-    const lamp = new THREE.Mesh(
-      new THREE.SphereGeometry(0.07, 12, 8),
-      new THREE.MeshStandardMaterial({ color: 0xfff1c4, emissive: 0xfff1c4, emissiveIntensity: 0.8 }),
-    );
-    lamp.position.set(x, 0.16, 1.74);
-    chassis.add(lamp);
-    const tail = new THREE.Mesh(
-      new THREE.SphereGeometry(0.055, 10, 8),
-      new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0xff2a2a, emissiveIntensity: 0.85 }),
-    );
-    tail.position.set(x, 0.16, -1.1);
-    chassis.add(tail);
+  const tailMat = new THREE.MeshStandardMaterial({ color: 0x9a1c1c, emissive: 0xff2218, emissiveIntensity: 0.35, roughness: 0.4 });
+  chassis.userData.tailMat = tailMat;
+  const add = (mesh) => { mesh.castShadow = true; chassis.add(mesh); return mesh; };
+  const box = (w, h, d, mat, x, y, z, rx) => {
+    const m = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat));
+    m.position.set(x, y, z);
+    if (rx) m.rotation.x = rx;
+    return m;
+  };
+  // Lower body, hood, cabin, glass, bumpers, and arches. Wheels sit outside the tub.
+  box(1.38, 0.32, 3.15, paint, 0, 0.02, 0.05);
+  box(1.46, 0.12, 0.22, paintDark, 0, -0.02, 1.68);
+  box(1.46, 0.14, 0.2, paintDark, 0, 0.0, -1.68);
+  box(1.22, 0.1, 1.15, paint, 0, 0.2, 1.05, -0.14);
+  box(0.7, 0.16, 0.08, dark, 0, 0.08, 1.78);
+  box(1.18, 0.4, 1.45, dark, 0, 0.36, -0.12);
+  box(1.22, 0.06, 1.15, paintDark, 0, 0.58, -0.1);
+  box(1.08, 0.32, 0.04, glass, 0, 0.4, 0.58, 0.42);
+  box(1.05, 0.28, 0.04, glass, 0, 0.4, -0.82, -0.5);
+  box(0.04, 0.26, 0.7, glass, -0.6, 0.4, -0.12);
+  box(0.04, 0.26, 0.7, glass, 0.6, 0.4, -0.12);
+  box(1.42, 0.08, 2.5, dark, 0, -0.1, 0.05);
+  for (const x of [-0.8, 0.8]) {
+    for (const z of [1.32, -1.32]) {
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.055, 6, 10, Math.PI), paint);
+      arch.rotation.set(Math.PI, Math.PI / 2, 0);
+      arch.position.set(x, -0.02, z);
+      arch.castShadow = true;
+      chassis.add(arch);
+    }
+  }
+  for (const x of [-0.52, 0.52]) {
+    const lamp = add(new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.1, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0xfff4d0, emissive: 0xfff1c2, emissiveIntensity: 1.1, roughness: 0.25 }),
+    ));
+    lamp.position.set(x, 0.08, 1.8);
+    const tail = add(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.06), tailMat));
+    tail.position.set(x, 0.12, -1.8);
   }
 
   const tread = makeTread();
@@ -1591,8 +1673,7 @@ function buildCar() {
   const ghostMat = new THREE.MeshStandardMaterial({
     map: tread, color: 0x222222, transparent: true, opacity: 0.0, depthWrite: false,
   });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0xc5ccd1, roughness: 0.35, metalness: 0.65 });
-  const markerMat = new THREE.MeshStandardMaterial({ color: 0xffbf3c, roughness: 0.4 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0xd5dde3, roughness: 0.32, metalness: 0.72 });
 
   for (const w of wheels) {
     const steer = new THREE.Group();
@@ -1603,12 +1684,24 @@ function buildCar() {
     const tire = new THREE.Mesh(tireGeo, tireMat);
     tire.castShadow = true;
     spin.add(tire);
-    const rimGeo = new THREE.CylinderGeometry(w.spec.radius * 0.55, w.spec.radius * 0.55, w.spec.width + 0.02, 16);
+    const rimGeo = new THREE.CylinderGeometry(w.spec.radius * 0.58, w.spec.radius * 0.58, w.spec.width * 0.55, 18);
     rimGeo.rotateZ(Math.PI / 2);
-    spin.add(new THREE.Mesh(rimGeo, rimMat));
-    const marker = new THREE.Mesh(new THREE.BoxGeometry(w.spec.width + 0.04, 0.14, 0.05), markerMat);
-    marker.position.set(0, w.spec.radius * 0.62, 0);
-    spin.add(marker);
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.position.x = w.spec.width * 0.22;
+    spin.add(rim);
+    const hubGeo = new THREE.CylinderGeometry(w.spec.radius * 0.16, w.spec.radius * 0.16, w.spec.width * 0.2, 10);
+    hubGeo.rotateZ(Math.PI / 2);
+    const hub = new THREE.Mesh(hubGeo, rimMat);
+    hub.position.x = w.spec.width * 0.42;
+    spin.add(hub);
+    for (const side of [-1, 1]) {
+      for (let s = 0; s < 5; s++) {
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.03, w.spec.radius * 0.72, 0.055), rimMat);
+        spoke.position.set(side * w.spec.width * 0.46, 0, 0);
+        spoke.rotation.x = (s / 5) * Math.PI * 2;
+        spin.add(spoke);
+      }
+    }
     const ghosts = [];
     for (let i = 0; i < 2; i++) {
       const g = new THREE.Mesh(tireGeo, ghostMat.clone());
@@ -1663,7 +1756,7 @@ function buildEffects() {
   geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   const points = new THREE.Points(
     geom,
-    new THREE.PointsMaterial({ size: 0.32, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false }),
+    new THREE.PointsMaterial({ size: 0.24, vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false }),
   );
   scene.add(points);
   scene.userData.points = points;
@@ -1748,6 +1841,10 @@ function updateVisuals(frameDt) {
     setArrow(w.arrows.n, w.contact, mul(w.normal, w.fz));
     setArrow(w.arrows.x, w.contact, mul(w.forward, w.fx));
     setArrow(w.arrows.y, w.contact, mul(w.right, w.fy));
+  }
+  if (chassis.userData.tailMat) {
+    const braking = input.brake > 0.12 || input.handbrake > 0.15;
+    chassis.userData.tailMat.emissiveIntensity = braking ? 2.4 : 0.35;
   }
 
   const byAxle = { front: [], rear: [] };
@@ -1874,6 +1971,8 @@ function updateHud() {
   });
   for (const b of document.querySelectorAll("[data-drive]")) b.classList.toggle("on", b.dataset.drive === state.driveMode);
   document.getElementById("forces").classList.toggle("on", state.debug);
+  const tcBtn = document.getElementById("tc");
+  if (tcBtn) tcBtn.classList.toggle("on", state.tc);
 }
 
 function setDrive(mode) {
@@ -1945,6 +2044,12 @@ function bindInput() {
       e.preventDefault();
     });
   }
+  document.getElementById("tc").addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    state.tc = !state.tc;
+    updateHud();
+    e.preventDefault();
+  });
   document.getElementById("forces").addEventListener("pointerdown", (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     setDebug(!state.debug);
@@ -2074,7 +2179,7 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "iphone12pm-2",
+    build: "iphone12pm-3",
     pixelRatio: () => renderer.getPixelRatio(),
     controls() {
       readInput();
