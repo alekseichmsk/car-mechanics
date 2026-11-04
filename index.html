@@ -472,7 +472,7 @@ const CONFIG = {
     dirt: { mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
     grass: { mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
     sand: { mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.32, recover: 0.3, gripLoss: 0.5, hDrag: 0.04, spinDamp: 650, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
-    snow: { mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.7, recover: 0.42, gripLoss: 0.72, hDrag: 0.065, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
+    snow: { mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.85, digAbove: 1.0, recoverBelow: 1.35, recover: 0.4, gripLoss: 0.72, hDrag: 0.055, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
     mud: { mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 0.5, recover: 0.32, gripLoss: 0.65, hDrag: 0.08, spinDamp: 1400, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
     ice: { mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
   },
@@ -1252,8 +1252,10 @@ function updateSink(dt) {
   for (const w of wheels) {
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
     const slip = Math.abs(w.slipRatio);
-    if (spec.loose && w.inContact) w.sinkDepth += slip * spec.slipGain * dt;
-    if (!w.inContact || slip < 0.55) w.sinkDepth -= (spec.recover || 0.45) * dt;
+    const digAbove = spec.digAbove ?? 0.45;
+    const recoverBelow = spec.recoverBelow ?? 0.9;
+    if (spec.loose && w.inContact) w.sinkDepth += Math.max(0, slip - digAbove) * spec.slipGain * dt;
+    if (!w.inContact || slip < recoverBelow) w.sinkDepth -= (spec.recover || 0.45) * dt;
     if (!spec.loose) w.sinkDepth -= 1.2 * dt;
     w.sinkDepth = clamp(w.sinkDepth, 0, 1);
   }
