@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="voyage-5432e">
+<meta name="car-build" content="voyage-5432f">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -160,18 +160,81 @@
     justify-content: center;
   }
   #side svg { width: 22px; height: 22px; }
-  #rainfx {
+  #rainfx, #snowfx, #hazefx {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    background:
-      repeating-linear-gradient(105deg, transparent 0 14px, rgba(190, 210, 225, 0.28) 14px 15px);
+  }
+  #rainfx {
+    background: repeating-linear-gradient(105deg, transparent 0 14px, rgba(190, 210, 225, 0.28) 14px 15px);
     animation: streaks 0.45s linear infinite;
     opacity: 0.85;
   }
-  #rainfx.on { display: block; }
+  #snowfx {
+    background:
+      radial-gradient(circle at 12% 20%, rgba(255,255,255,.9) 0 1.1px, transparent 1.6px),
+      radial-gradient(circle at 70% 40%, rgba(255,255,255,.75) 0 1.2px, transparent 1.7px),
+      radial-gradient(circle at 40% 80%, rgba(255,255,255,.8) 0 1px, transparent 1.5px);
+    background-size: 140px 180px, 180px 220px, 160px 200px;
+    animation: snowfall 2.8s linear infinite;
+    opacity: 0.8;
+  }
+  #hazefx {
+    background: linear-gradient(180deg, rgba(255, 214, 150, 0.22), rgba(255, 236, 200, 0.05) 40%, rgba(255, 220, 160, 0.12));
+    animation: haze 3.2s ease-in-out infinite;
+    opacity: 0.9;
+  }
+  #rainfx.on, #snowfx.on, #hazefx.on { display: block; }
+  #seedchip {
+    position: fixed;
+    z-index: 6;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--pad-h, 108px) + 26px + env(safe-area-inset-bottom, 0px));
+    pointer-events: auto;
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+  }
+  #newseed::before { content: "НОВЫЙ СИД"; }
+  #worldmenu {
+    position: fixed;
+    z-index: 6;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--pad-h, 108px) + 68px + env(safe-area-inset-bottom, 0px));
+    width: min(250px, calc(100vw - 24px));
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: auto;
+  }
+  #worldmenu.open { display: flex; }
+  #worldmenu .wx, #worldmenu .ts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  #worldmenu button {
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  #worldmenu button[data-wx="auto"]::before { content: "АВТО"; }
+  #worldmenu button[data-wx="snow"]::before { content: "СНЕГ"; }
+  #worldmenu button[data-wx="rain"]::before { content: "ДОЖДЬ"; }
+  #worldmenu button[data-wx="desert"]::before { content: "ПУСТЫНЯ"; }
+  #worldmenu button[data-wx="mixed"]::before { content: "СМЕШАН"; }
+  #worldmenu button[data-time="1"]::before { content: "1×"; }
+  #worldmenu button[data-time="4"]::before { content: "4×"; }
+  #worldmenu button[data-time="16"]::before { content: "16×"; }
+  #worldmenu button.on { background: var(--amber); color: #1a1408; }
+  #bioline { font-size: 12px; letter-spacing: 0.06em; opacity: 0.9; }
   #extra {
     position: fixed;
     z-index: 4;
@@ -191,6 +254,8 @@
   }
   #extra svg { width: 22px; height: 22px; }
   @keyframes streaks { from { background-position: 0 0; } to { background-position: -30px 90px; } }
+  @keyframes snowfall { from { background-position: 0 -40px, 0 -20px, 0 -60px; } to { background-position: 30px 180px, -20px 220px, 16px 200px; } }
+  @keyframes haze { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.85; } }
   #forces svg, #reset svg { width: 18px; height: 18px; }
   #wheels {
     display: grid;
@@ -430,6 +495,25 @@
   <button type="button" id="rainbtn" aria-label="Дождь"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15a5 5 0 1 1 1.2-9.8A6 6 0 0 1 18 11"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></svg></button>
 </div>
 <div id="rainfx"></div>
+<div id="snowfx"></div>
+<div id="hazefx"></div>
+<button type="button" id="seedchip" class="panel" aria-label="Мир"></button>
+<div id="worldmenu" class="panel">
+  <div id="bioline"></div>
+  <div class="wx">
+    <button type="button" data-wx="auto" aria-label="Авто"></button>
+    <button type="button" data-wx="snow" aria-label="Снег"></button>
+    <button type="button" data-wx="rain" aria-label="Дождь"></button>
+    <button type="button" data-wx="desert" aria-label="Пустыня"></button>
+    <button type="button" data-wx="mixed" aria-label="Смешанный"></button>
+  </div>
+  <div class="ts">
+    <button type="button" data-time="1" aria-label="Время 1"></button>
+    <button type="button" data-time="4" aria-label="Время 4"></button>
+    <button type="button" data-time="16" aria-label="Время 16"></button>
+  </div>
+  <button type="button" id="newseed" aria-label="Новый сид"></button>
+</div>
 <p id="hint"></p>
 <div id="touch">
   <div class="steer">
@@ -825,28 +909,144 @@ const ROAD = {
   plain: 100,
   ahead: 170,
   behind: 70,
+  step: 12,
+  maxHeading: 0.34,
+  maxSlope: 0.04,
+  maxWater: 0.38,
+  maxDrift: 0.42,
+  maxLaneRock: 0.3,
   cycle: ["asphalt", "dirt", "rocks", "sand", "mud", "drift", "pack", "ice", "water"],
-  names: { asphalt: "АСФАЛЬТ", dirt: "ГРУНТ", rocks: "КАМНИ", sand: "ПЕСОК", mud: "ГРЯЗЬ", drift: "СУГРОБ", pack: "НАСТ", ice: "ЛЁД", water: "БРОД" },
+  names: { asphalt: "АСФАЛЬТ", dirt: "ГРУНТ", rocks: "КАМНИ", sand: "ПЕСОК", mud: "ГРЯЗЬ", drift: "СУГРОБ", pack: "НАСТ", ice: "ЛЁД", water: "БРОД", grass: "ТРАВА", gravel: "ГРАВИЙ" },
+  seed: 1,
 };
 
-function roadFade(z) {
-  return smoothstep(ROAD.plain, ROAD.plain + 240, Math.abs(z));
+const BIOMES = {
+  winter: { ru: "ЗИМА", surfaces: ["pack", "drift", "ice", "pack", "drift"] },
+  rain: { ru: "ДОЖДЬ", surfaces: ["asphalt", "mud", "dirt", "water", "asphalt"] },
+  desert: { ru: "ПУСТЫНЯ", surfaces: ["sand", "sand", "rocks", "sand", "dirt"] },
+  forest: { ru: "ЛЕС", surfaces: ["dirt", "grass", "rocks", "dirt", "water"] },
+  mixed: { ru: "СМЕШАН", surfaces: ["asphalt", "dirt", "rocks", "sand", "mud", "drift", "pack", "ice", "water"] },
+};
+const BIOME_ZONE = 420;
+
+function roadHash(seed, i, salt) {
+  let n = (seed >>> 0) + Math.imul(i | 0, 0x9e3779b1) + Math.imul((salt | 0) + 1, 0x85ebca6b);
+  n = Math.imul(n ^ (n >>> 16), 0x7feb352d);
+  n = Math.imul(n ^ (n >>> 15), 0x846ca68b);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 }
-function roadX(z) {
-  return roadFade(z) * (12 * Math.sin(z * 0.0055) + 4 * Math.sin(z * 0.013 + 0.7));
+
+const roadPts = new Map();
+let roadHi = 0;
+let roadLo = 0;
+const orderCache = new Map();
+roadPts.set(0, { x: 0, y: 0, hdg: 0 });
+
+function clearRoad() {
+  roadPts.clear();
+  roadPts.set(0, { x: 0, y: 0, hdg: 0 });
+  roadHi = 0;
+  roadLo = 0;
+  orderCache.clear();
 }
-function roadY(z) {
-  return roadFade(z) * (1.05 * Math.sin(z * 0.0048) + 0.28 * Math.sin(z * 0.012));
+
+function biomeAt(z) {
+  const mode = state.weatherMode;
+  if (mode === "snow") return "winter";
+  if (mode === "rain") return "rain";
+  if (mode === "desert") return "desert";
+  if (mode === "mixed") return "mixed";
+  const keys = ["forest", "winter", "rain", "desert"];
+  const along = Math.max(0, Math.abs(z) - ROAD.plain);
+  let zone = Math.floor(along / BIOME_ZONE);
+  if (z >= state.weatherFront) zone += state.weatherEpoch;
+  const pick = Math.floor(roadHash(ROAD.seed, zone, 4) * keys.length) % keys.length;
+  return keys[pick];
 }
+
+function biomeBlend(z) {
+  const biome = biomeAt(z);
+  if (state.weatherMode !== "auto") return { biome, next: biome, t: 0 };
+  const along = Math.max(0, Math.abs(z) - ROAD.plain);
+  const m = along % BIOME_ZONE;
+  const t = clamp((m - (BIOME_ZONE - 80)) / 80, 0, 1);
+  const sign = Math.sign(z) || 1;
+  return { biome, next: biomeAt(z + sign * 90), t };
+}
+
+function surfaceOrder(biome, zone) {
+  const key = `${ROAD.seed}:${biome}:${zone}`;
+  if (orderCache.has(key)) return orderCache.get(key);
+  const list = BIOMES[biome].surfaces.slice();
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(roadHash(ROAD.seed, zone * 31 + i, biome.length + 3) * (i + 1));
+    const swap = list[i];
+    list[i] = list[j];
+    list[j] = swap;
+  }
+  orderCache.set(key, list);
+  return list;
+}
+
+function advanceRoad(prev, index, dir) {
+  const z = index * ROAD.step;
+  if (Math.abs(z) <= ROAD.plain && Math.abs(prev.x) < 0.001) return { x: 0, y: 0, hdg: 0 };
+  const kind = Math.abs(z) <= ROAD.plain ? "asphalt" : segKind(z);
+  const soft = kind === "drift" || kind === "ice" || kind === "water";
+  const turnAmp = soft ? 0.045 : 0.10;
+  const slopeAmp = soft ? 0.012 : ROAD.maxSlope;
+  const turn = (roadHash(ROAD.seed, index, 1) - 0.5) * 2 * turnAmp;
+  let hdg = clamp(prev.hdg * 0.76 + turn, -ROAD.maxHeading, ROAD.maxHeading);
+  if (Math.abs(z) < ROAD.plain + ROAD.step * 2) hdg *= 0.4;
+  const dz = ROAD.step * dir;
+  const x = prev.x + Math.tan(hdg) * dz;
+  const slope = (roadHash(ROAD.seed, index, 2) - 0.5) * 2 * slopeAmp;
+  let y = prev.y + slope * dz;
+  y = clamp(y * 0.992, -8, 16);
+  return { x, y, hdg };
+}
+
+function ensureRoadPt(index) {
+  if (index > roadHi) {
+    let prev = roadPts.get(roadHi);
+    for (let k = roadHi + 1; k <= index; k++) {
+      prev = advanceRoad(prev, k, 1);
+      roadPts.set(k, prev);
+    }
+    roadHi = index;
+  } else if (index < roadLo) {
+    let prev = roadPts.get(roadLo);
+    for (let k = roadLo - 1; k >= index; k--) {
+      prev = advanceRoad(prev, k, -1);
+      roadPts.set(k, prev);
+    }
+    roadLo = index;
+  }
+  return roadPts.get(index);
+}
+
+function roadSample(z) {
+  const step = ROAD.step;
+  const f = z / step;
+  const i = Math.floor(f);
+  const t = f - i;
+  const a = ensureRoadPt(i);
+  const b = ensureRoadPt(i + 1);
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, hdg: a.hdg + (b.hdg - a.hdg) * t };
+}
+function roadX(z) { return roadSample(z).x; }
+function roadY(z) { return roadSample(z).y; }
 function roadHeading(z) {
   const e = 2;
-  return Math.atan2(roadX(z + e) - roadX(z - e), 2 * e);
+  return Math.atan2(roadX(z + e) - roadX(z - e), e * 2);
 }
 function segKind(z) {
   if (z >= -ROAD.plain && z <= ROAD.plain) return "asphalt";
-  const shifted = Math.abs(z) - ROAD.plain;
-  const n = Math.floor(shifted / ROAD.seg);
-  return ROAD.cycle[n % ROAD.cycle.length];
+  const biome = biomeAt(z);
+  const list = BIOMES[biome].surfaces;
+  const n = Math.floor((Math.abs(z) - ROAD.plain) / ROAD.seg);
+  const zone = Math.floor(n / list.length);
+  return surfaceOrder(biome, zone)[n % list.length];
 }
 function segStartZ(z) {
   if (Math.abs(z) <= ROAD.plain) return z >= 0 ? -ROAD.plain : -ROAD.plain;
@@ -924,24 +1124,26 @@ function featureHeight(x, z, f) {
 function waterDepth(x, z) {
   if (segKind(z) !== "water") return 0;
   const dx = x - roadX(z);
-  if (Math.abs(dx) > 6.4) return 0;
+  if (Math.abs(dx) > 6.2) return 0;
   const start = segStartZ(z);
-  const v = clamp((z - start) / ROAD.seg, 0, 1);
-  const edge = smoothstep(0.06, 0.18, v) * smoothstep(0.94, 0.82, v);
-  const side = 1 - (dx / 6.4) ** 2;
-  return 0.48 * edge * Math.max(side, 0);
+  const along = clamp((z - start) / ROAD.seg, 0, 1);
+  const edge = smoothstep(0.08, 0.2, along) * smoothstep(0.92, 0.8, along);
+  const side = 1 - (dx / 6.2) ** 2;
+  return Math.min(ROAD.maxWater, 0.36 * edge * Math.max(side, 0));
 }
 
 function detailHeight(x, z, dx) {
   const kind = segKind(z);
   const fade = smoothstep(0, 14, distToSegEdge(z));
+  const phase = ROAD.seed * 0.017;
   let h = 0;
-  if (kind === "sand") h = 0.045 * Math.sin(x * 1.6 + z * 0.45) + 0.18 * Math.sin(z * 0.05) * Math.sin(x * 0.08);
-  else if (kind === "mud") h = 0.05 * Math.sin(x * 0.7) * Math.sin(z * 0.55);
+  if (kind === "sand") h = 0.035 * Math.sin(x * 1.55 + phase) + 0.14 * Math.sin(z * 0.042 + phase) * Math.sin(x * 0.08 + phase * 0.3);
+  else if (kind === "mud") h = 0.045 * Math.sin(x * 0.7 + phase) * Math.sin(z * 0.55);
   else if (kind === "drift") {
-    const side = clamp((Math.abs(dx) - 5.6) / 1.6, 0, 1);
-    h = side * 0.42 * (0.65 + 0.35 * Math.sin(z * 0.07));
-  } else if (kind === "pack") h = 0.015 * Math.sin(x * 0.9 + z * 0.3);
+    const side = clamp((Math.abs(dx) - 5.8) / 1.5, 0, 1);
+    const amp = 0.26 + 0.14 * roadHash(ROAD.seed, Math.floor(z / 18), 8);
+    h = side * Math.min(ROAD.maxDrift, amp) * (0.7 + 0.3 * Math.sin(z * 0.07 + phase));
+  } else if (kind === "pack") h = 0.012 * Math.sin(x * 0.9 + z * 0.3 + phase);
   return h * fade;
 }
 
@@ -1166,26 +1368,28 @@ function rockGeometry() {
   return sharedRockGeo;
 }
 
-function chunkRocks(z0, d) {
+function rockSpecs(z0, d) {
   const rocks = [];
   for (let z = z0 + 3; z < z0 + d - 2; z += 5.5) {
     if (segKind(z) !== "rocks") continue;
     const cx = roadX(z);
     const slots = [
-      [-2.6, 0.16 + hash01(z) * 0.2],
-      [2.7, 0.14 + hash01(z + 3) * 0.18],
-      [-5.4, 0.62 + hash01(z + 1) * 0.35],
-      [5.5, 0.58 + hash01(z + 2) * 0.4],
+      [-2.9, 0.1 + roadHash(ROAD.seed, Math.floor(z * 4), 3) * 0.16],
+      [3.0, 0.1 + roadHash(ROAD.seed, Math.floor(z * 4), 4) * 0.16],
+      [-5.7, 0.5 + roadHash(ROAD.seed, Math.floor(z * 4), 5) * 0.28],
+      [5.8, 0.48 + roadHash(ROAD.seed, Math.floor(z * 4), 6) * 0.3],
     ];
-    for (const [lat, h] of slots) {
+    for (const [lat, h0] of slots) {
+      const h = Math.min(Math.abs(lat) < 3.4 ? ROAD.maxLaneRock : 0.95, h0);
       const x = cx + lat;
-      const r = Math.max(0.14, h * 0.82);
+      const r = Math.max(0.12, h * 0.8);
       const gy = terrainHeight(x, z);
-      rocks.push({ x, z, r, cy: gy + h - r, crawl: true });
+      rocks.push({ x, z, r, cy: gy + h - r, top: h, lat, crawl: true });
     }
   }
   return rocks;
 }
+function chunkRocks(z0, d) { return rockSpecs(z0, d); }
 
 function chunkRails(z0, d) {
   const rails = [];
@@ -1232,6 +1436,7 @@ function makeRoadChunk(index) {
       const surf = surfaceAt(x, z);
       const spec = CONFIG.surfaces[surf] || CONFIG.surfaces.grass;
       color.set(spec.color);
+      if ((biomeAt(z) === "rain" || state.weatherMode === "rain") && (surf === "asphalt" || surf === "wet")) color.multiplyScalar(0.62);
       const edge = distToSegEdge(z);
       if (edge < 12) {
         const nz = z + (z >= 0 ? 8 : -8);
@@ -1296,6 +1501,17 @@ function makeRoadChunk(index) {
     water.position.set(cx, bed + 0.05, z0 + d * 0.5);
     group.add(water);
   }
+  if (kind === "mud" || ((biomeAt(z0 + d * 0.5) === "rain" || state.weatherMode === "rain") && (kind === "asphalt" || kind === "dirt"))) {
+    const puddleMat = new THREE.MeshStandardMaterial({ color: 0x243038, roughness: 0.08, metalness: 0.25, transparent: true, opacity: 0.72, flatShading: true });
+    for (let p = 0; p < 2; p++) {
+      const z = z0 + 8 + p * 16;
+      const cx = roadX(z) + (p === 0 ? -1.4 : 1.6);
+      const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.9 + p * 0.35, 6), puddleMat);
+      puddle.rotation.x = -Math.PI / 2;
+      puddle.position.set(cx, terrainHeight(cx, z) + 0.04, z);
+      group.add(puddle);
+    }
+  }
   const start = segStartZ(z0 + 2);
   if (start >= z0 && start < z0 + d && Math.abs(start) > ROAD.plain - 1) {
     const label = ROAD.names[segKind(start + 2)] || "ДОРОГА";
@@ -1315,7 +1531,8 @@ function makeRoadChunk(index) {
     post.position.set(board.position.x, sy + 0.85, board.position.z);
     group.add(post);
   }
-  for (let t = 0; t < 5; t++) {
+  const treeBiome = biomeAt(z0 + d * 0.5);
+  for (let t = 0; t < (treeBiome === "desert" ? 0 : 5); t++) {
     const z = z0 + 4 + t * 8;
     const side = t % 2 === 0 ? 1 : -1;
     const x = roadX(z) + side * (ROAD.half + 3.5);
@@ -1393,6 +1610,130 @@ function ensureRoad(z) {
   for (const [i, c] of roadIndex) {
     if (!keep.has(i)) disposeChunk(c);
   }
+}
+
+function rebuildAhead() {
+  for (const c of [...softChunks]) {
+    if (c.road && c.z > state.weatherFront - 8) disposeChunk(c);
+  }
+  ensureRoad(state.position.z);
+}
+
+function rebuildRoad() {
+  for (const c of [...softChunks]) if (c.road) disposeChunk(c);
+  ensureRoad(state.position.z);
+}
+
+function updateClimate() {
+  const blend = biomeBlend(state.position.z);
+  state.biome = blend.biome;
+  state.biomeNext = blend.next;
+  state.biomeT = blend.t;
+  const snowing = state.weatherMode === "snow" || blend.biome === "winter" || (blend.next === "winter" && blend.t > 0.4);
+  const raining = !snowing && (state.weatherMode === "rain" || blend.biome === "rain" || (blend.next === "rain" && blend.t > 0.4));
+  state.snowing = snowing;
+  state.rain = raining;
+  state.dust = state.weatherMode === "desert" || blend.biome === "desert" || (blend.next === "desert" && blend.t > 0.45);
+  state.snowCover = snowing;
+}
+
+function setWeather(mode) {
+  const allowed = ["auto", "snow", "rain", "desert", "mixed"];
+  if (!allowed.includes(mode) || mode === state.weatherMode) {
+    updateClimate();
+    return;
+  }
+  state.weatherMode = mode;
+  state.weatherEpoch = 0;
+  state.weatherTime = 0;
+  state.weatherFront = 1e9;
+  clearRoad();
+  rebuildRoad();
+  updateClimate();
+}
+
+function setSeed(seed, opts = {}) {
+  const next = (Number(seed) || 1) >>> 0;
+  if (next === ROAD.seed && !opts.force) return ROAD.seed;
+  ROAD.seed = next || 1;
+  clearRoad();
+  if (opts.rebuild !== false) rebuildRoad();
+  if (opts.resetCar) reset({ x: 0, z: 4, speed: 0, yaw: 0 });
+  return ROAD.seed;
+}
+
+function auditSeed(seed) {
+  const saved = {
+    seed: ROAD.seed,
+    hi: roadHi,
+    lo: roadLo,
+    pts: new Map(roadPts),
+    mode: state.weatherMode,
+    epoch: state.weatherEpoch,
+    front: state.weatherFront,
+  };
+  ROAD.seed = (Number(seed) || 1) >>> 0;
+  clearRoad();
+  state.weatherEpoch = 0;
+  state.weatherFront = 1e9;
+  let maxH = 0;
+  let maxS = 0;
+  let maxW = 0;
+  let maxDc = 0;
+  let maxDs = 0;
+  let maxRock = 0;
+  let maxSand = 0;
+  let x900 = 0;
+  const xs = [];
+  const biomes = new Set();
+  for (const mode of ["auto", "snow", "rain", "desert", "mixed"]) {
+    state.weatherMode = mode;
+    clearRoad();
+    for (let z = ROAD.plain + 20; z <= 2600; z += 16) {
+      const a = roadSample(z);
+      const b = roadSample(z + 8);
+      maxH = Math.max(maxH, Math.abs(Math.atan2(b.x - a.x, 8)));
+      maxS = Math.max(maxS, Math.abs((b.y - a.y) / 8));
+      const kind = segKind(z);
+      if (kind === "water") maxW = Math.max(maxW, waterDepth(roadX(z), z));
+      if (kind === "drift") {
+        maxDc = Math.max(maxDc, Math.abs(detailHeight(roadX(z), z, 0)));
+        maxDs = Math.max(maxDs, detailHeight(roadX(z) + 7.2, z, 7.2));
+      }
+      if (kind === "sand") maxSand = Math.max(maxSand, Math.abs(detailHeight(roadX(z), z, 0)));
+      if (kind === "rocks") {
+        for (const rock of rockSpecs(z - 2, 6)) {
+          if (Math.abs(rock.lat) < 1.3) maxRock = Math.max(maxRock, rock.top);
+        }
+      }
+      if (mode === "mixed" && z % 80 < 16) xs.push(a.x);
+      if (mode === "mixed" && Math.abs(z - 900) < 12) x900 = a.x;
+      if (mode === "auto" && z % 200 < 16) biomes.add(biomeAt(z));
+    }
+  }
+  const spread = xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+  ROAD.seed = saved.seed;
+  roadPts.clear();
+  for (const [k, v] of saved.pts) roadPts.set(k, v);
+  roadHi = saved.hi;
+  roadLo = saved.lo;
+  state.weatherMode = saved.mode;
+  state.weatherEpoch = saved.epoch;
+  state.weatherFront = saved.front;
+  orderCache.clear();
+  return {
+    seed: (Number(seed) || 1) >>> 0,
+    maxAbsHeading: maxH,
+    maxAbsSlope: maxS,
+    maxWater: maxW,
+    maxDriftCenter: maxDc,
+    maxDriftSide: maxDs,
+    maxLaneRock: maxRock,
+    maxSand,
+    xSpread: spread,
+    xAt900: x900,
+    biomes: [...biomes],
+  };
 }
 
 function roadSpot(kind) {
@@ -1589,6 +1930,17 @@ const state = {
   lights: 0,
   wipers: false,
   rain: false,
+  snowing: false,
+  dust: false,
+  snowCover: false,
+  weatherMode: "auto",
+  weatherTime: 0,
+  weatherEpoch: 0,
+  weatherFront: 1e9,
+  timeScale: 1,
+  biome: "mixed",
+  biomeNext: "mixed",
+  biomeT: 0,
   wear: 0,
   wearLine: "АСФАЛЬТ • ИЗНОС +0",
   timeOfDay: 0.42,
@@ -2026,6 +2378,12 @@ function solveTires(dt) {
     if (state.rain && (w.surface === "asphalt" || w.surface === "wet")) {
       const wet = CONFIG.surfaces.wet;
       surf = { mu: wet.mu, rolling: wet.rolling, sink: surf.sink, lng: wet.lng, lat: wet.lat };
+      const puddle = roadHash(ROAD.seed, Math.floor(w.centerWorld.x * 2), Math.floor(w.centerWorld.z * 2));
+      if (puddle > 0.84) surf = { ...surf, mu: surf.mu * 0.78 };
+    }
+    if (state.snowCover && (w.surface === "asphalt" || w.surface === "wet" || w.surface === "dirt" || w.surface === "grass")) {
+      const pack = CONFIG.surfaces.pack;
+      surf = { mu: pack.mu, rolling: pack.rolling, sink: surf.sink, lng: pack.lng, lat: pack.lat };
     }
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
@@ -2355,7 +2713,18 @@ function stepTravel(dt) {
     state.wipers = false;
   }
   state.odo += (speed * dt) / 1000;
-  state.timeOfDay = (state.timeOfDay + dt / 180) % 1;
+  const scale = state.timeScale || 1;
+  state.timeOfDay = (state.timeOfDay + (dt * scale) / 180) % 1;
+  if (!scripted && state.weatherMode === "auto") {
+    state.weatherTime += dt * scale;
+    if (state.weatherTime > 75) {
+      state.weatherTime = 0;
+      state.weatherEpoch += 1;
+      state.weatherFront = state.position.z + 40;
+      rebuildAhead();
+    }
+  }
+  updateClimate();
   if (state.impactCooldown > 0) state.impactCooldown = Math.max(0, state.impactCooldown - dt);
 }
 
@@ -2957,6 +3326,7 @@ function buildRails() {
 let skyMat = null;
 let skyMesh = null;
 let moonMesh = null;
+let weatherPts = null;
 function buildSky() {
   skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
@@ -2992,6 +3362,21 @@ function buildSky() {
     clouds.push(group);
   }
   scene.userData.clouds = clouds;
+  const n = 70;
+  const geo = new THREE.BufferGeometry();
+  const arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    arr[i * 3] = (hash01(i) - 0.5) * 20;
+    arr[i * 3 + 1] = 2 + hash01(i + 3) * 8;
+    arr[i * 3 + 2] = (hash01(i + 8) - 0.5) * 20;
+  }
+  geo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+  weatherPts = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0xffffff, size: 0.1, transparent: true, opacity: 0.85, depthWrite: false, sizeAttenuation: true,
+  }));
+  weatherPts.frustumCulled = false;
+  weatherPts.visible = false;
+  scene.add(weatherPts);
 }
 
 function buildTrack() {
@@ -3447,16 +3832,32 @@ function applyImpacts() {
   }
 }
 
+const BIOME_SKY = {
+  winter: { top: "#d5e4ef", horizon: "#eef3f6", fog: "#dfe8ee", near: 34 },
+  rain: { top: "#4d6270", horizon: "#6d624f", fog: "#6a7278", near: 24 },
+  desert: { top: "#f0b15a", horizon: "#f6d7a2", fog: "#e6c98a", near: 30 },
+  forest: { top: "#7eb0dc", horizon: "#d5e7c4", fog: "#b7cda6", near: 40 },
+  mixed: { top: "#8ec6ef", horizon: "#f3d7b0", fog: "#a9c0ce", near: 46 },
+};
+
+function skyColor(name, key) {
+  return new THREE.Color((BIOME_SKY[name] || BIOME_SKY.mixed)[key]);
+}
+
 function updateAtmosphere(frameDt) {
+  updateClimate();
   const t = state.timeOfDay;
   const elev = Math.sin((t - 0.25) * TAU);
   const az = t * TAU;
   const sunDir = new THREE.Vector3(Math.cos(az), elev, Math.sin(az)).normalize();
   const day = clamp(elev * 0.5 + 0.5, 0, 1);
-  const rainDim = state.rain ? 0.55 : 1;
+  const mixT = state.biomeT || 0;
+  const rainDim = state.rain ? 0.62 : state.dust ? 0.9 : 1;
   if (skyMat) {
-    skyMat.uniforms.top.value.set(state.rain ? "#4d6270" : "#8ec6ef").lerp(new THREE.Color("#070b16"), 1 - day);
-    skyMat.uniforms.horizon.value.set(state.rain ? "#6d624f" : "#f3d7b0").lerp(new THREE.Color("#1a120c"), 1 - day);
+    const top = skyColor(state.biome, "top").lerp(skyColor(state.biomeNext, "top"), mixT);
+    const horizon = skyColor(state.biome, "horizon").lerp(skyColor(state.biomeNext, "horizon"), mixT);
+    skyMat.uniforms.top.value.copy(top).lerp(new THREE.Color("#070b16"), 1 - day);
+    skyMat.uniforms.horizon.value.copy(horizon).lerp(new THREE.Color("#1a120c"), 1 - day);
     skyMat.uniforms.bottom.value.set("#8ea4b4").lerp(new THREE.Color("#05070c"), 1 - day);
     skyMat.uniforms.sunDir.value.copy(sunDir);
   }
@@ -3469,8 +3870,10 @@ function updateAtmosphere(frameDt) {
   );
   if (typeof hemi !== "undefined") hemi.intensity = (0.25 + day * 0.7) * rainDim;
   fill.intensity = (0.08 + day * 0.3) * rainDim;
-  scene.fog.color.set(state.rain ? "#6a7278" : "#a9c0ce").lerp(new THREE.Color("#12161c"), 1 - day);
-  scene.fog.near = state.rain ? 28 : 45;
+  const fog = skyColor(state.biome, "fog").lerp(skyColor(state.biomeNext, "fog"), mixT);
+  scene.fog.color.copy(fog).lerp(new THREE.Color("#12161c"), 1 - day);
+  const near = BIOME_SKY[state.biome].near + (BIOME_SKY[state.biomeNext].near - BIOME_SKY[state.biome].near) * mixT;
+  scene.fog.near = near;
   if (moonMesh) {
     moonMesh.position.set(
       state.position.x - sunDir.x * 60,
@@ -3485,7 +3888,33 @@ function updateAtmosphere(frameDt) {
     if (cloud.position.x > 80) cloud.position.x = -80;
   }
   const rainEl = document.getElementById("rainfx");
+  const snowEl = document.getElementById("snowfx");
+  const hazeEl = document.getElementById("hazefx");
   if (rainEl) rainEl.classList.toggle("on", state.rain);
+  if (snowEl) snowEl.classList.toggle("on", state.snowing);
+  if (hazeEl) hazeEl.classList.toggle("on", state.dust && day > 0.35);
+  if (weatherPts) {
+    const show = state.snowing || state.dust;
+    weatherPts.visible = show;
+    if (show) {
+      const pos = weatherPts.geometry.attributes.position;
+      const n = pos.count;
+      for (let i = 0; i < n; i++) {
+        let y = pos.getY(i) - frameDt * (state.snowing ? 2.4 : 0.8);
+        let x = pos.getX(i) + frameDt * (state.dust ? 1.4 : 0.2);
+        if (y < state.position.y - 1 || x > state.position.x + 14) {
+          x = state.position.x + (hash01(i + state.time * 10) - 0.5) * 22;
+          y = state.position.y + 2 + hash01(i + 4) * 8;
+          pos.setZ(i, state.position.z + (hash01(i + 9) - 0.5) * 22);
+        }
+        pos.setX(i, x);
+        pos.setY(i, y);
+      }
+      pos.needsUpdate = true;
+      weatherPts.material.color.set(state.dust ? 0xd7b07a : 0xf7fbff);
+      weatherPts.material.size = state.dust ? 0.22 : 0.09;
+    }
+  }
   const beam = state.battery > 0.02 ? state.lights : 0;
   if (chassis.userData.headMat) chassis.userData.headMat.emissiveIntensity = beam === 0 ? 0.15 : beam === 1 ? 1.3 : 2.6;
   if (chassis.userData.spot) {
@@ -3719,7 +4148,16 @@ function updateHud() {
   if (cruise) cruise.classList.toggle("on", state.cruise);
   if (lights) lights.classList.toggle("on", state.lights > 0);
   if (wipers) wipers.classList.toggle("on", state.wipers);
-  if (rainBtn) rainBtn.classList.toggle("on", state.rain);
+  if (rainBtn) rainBtn.classList.toggle("on", state.rain || state.weatherMode === "rain");
+  const chip = document.getElementById("seedchip");
+  if (chip) chip.textContent = `СИД ${ROAD.seed}`;
+  const bio = document.getElementById("bioline");
+  if (bio) {
+    const name = (BIOMES[state.biome] && BIOMES[state.biome].ru) || "";
+    bio.textContent = state.biomeT > 0.15 ? `${name} → ${(BIOMES[state.biomeNext] && BIOMES[state.biomeNext].ru) || ""}` : name;
+  }
+  for (const b of document.querySelectorAll("[data-wx]")) b.classList.toggle("on", b.dataset.wx === state.weatherMode);
+  for (const b of document.querySelectorAll("[data-time]")) b.classList.toggle("on", Number(b.dataset.time) === state.timeScale);
   const camBtn = document.getElementById("camhold");
   if (camBtn) camBtn.classList.toggle("on", orbit.hold);
 }
@@ -3806,7 +4244,7 @@ function bindInput() {
   };
   guard(document);
   guard(document.body);
-  for (const el of document.querySelectorAll("button, #hud, #touch, #rotate, #hint, #legend, #wheel")) guard(el);
+  for (const el of document.querySelectorAll("button, #hud, #touch, #rotate, #hint, #legend, #wheel, #worldmenu")) guard(el);
   document.addEventListener("gesturestart", swallow, { passive: false });
   document.addEventListener("gesturechange", swallow, { passive: false });
   document.addEventListener("dblclick", swallow);
@@ -3856,7 +4294,30 @@ function bindInput() {
   });
   toggle("lights", () => { state.lights = (state.lights + 1) % 3; });
   toggle("wipers", () => { state.wipers = !state.wipers; });
-  toggle("rainbtn", () => { state.rain = !state.rain; });
+  toggle("rainbtn", () => { setWeather(state.weatherMode === "rain" ? "auto" : "rain"); });
+  toggle("seedchip", () => {
+    const menu = document.getElementById("worldmenu");
+    if (menu) menu.classList.toggle("open");
+  });
+  toggle("newseed", () => {
+    setSeed((Math.floor(Math.random() * 900000000) + 1) >>> 0, { resetCar: true, force: true });
+  });
+  for (const b of document.querySelectorAll("[data-wx]")) {
+    b.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      setWeather(b.dataset.wx);
+      updateHud();
+      e.preventDefault();
+    });
+  }
+  for (const b of document.querySelectorAll("[data-time]")) {
+    b.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      state.timeScale = Number(b.dataset.time) || 1;
+      updateHud();
+      e.preventDefault();
+    });
+  }
   toggle("rocks", () => {
     const spot = roadSpot("rocks");
     reset({ x: spot.x, z: spot.z, speed: 1.2, yaw: spot.yaw });
@@ -3866,7 +4327,7 @@ function bindInput() {
     if (!orbit.hold) orbit.idle = CONFIG.camera.returnDelay;
   });
   const canvasEl = document.getElementById("view");
-  const orbitBlocked = (target) => !!(target && target.closest && target.closest("button, #wheel, #side, #extra, #modes"));
+  const orbitBlocked = (target) => !!(target && target.closest && target.closest("button, #wheel, #side, #extra, #modes, #worldmenu, #seedchip"));
   window.addEventListener("pointerdown", (e) => {
     if (orbitBlocked(e.target)) return;
     orbit.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -4024,7 +4485,23 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+function initWorld() {
+  const params = new URLSearchParams(location.search);
+  const manualRun = params.has("manual");
+  if (params.has("seed")) ROAD.seed = Number(params.get("seed")) >>> 0;
+  else if (manualRun) ROAD.seed = 5432;
+  else ROAD.seed = (Math.floor(Math.random() * 900000000) + 1) >>> 0;
+  if (!ROAD.seed) ROAD.seed = 1;
+  clearRoad();
+  state.weatherMode = manualRun ? "mixed" : "auto";
+  state.timeScale = 1;
+  state.weatherEpoch = 0;
+  state.weatherTime = 0;
+  state.weatherFront = 1e9;
+}
+
 function boot() {
+  initWorld();
   assertMath();
   buildTrack();
   buildCar();
@@ -4047,7 +4524,11 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "voyage-5432e",
+    build: "voyage-5432f",
+    setWeather,
+    setSeed,
+    auditSeed,
+    biomeAt,
     orbitState: () => ({ yaw: orbit.yaw, pitch: orbit.pitch, dist: orbit.dist, hold: orbit.hold, dragging: orbit.dragging }),
     clearRuts,
     roadSpot,
@@ -4095,6 +4576,9 @@ function boot() {
       if (v.odo != null) state.odo = v.odo;
       if (v.wear != null) state.wear = v.wear;
       if (v.cruise != null) state.cruise = !!v.cruise;
+      if (v.weatherMode) setWeather(v.weatherMode);
+      if (v.timeScale) state.timeScale = Number(v.timeScale) || 1;
+      if (v.seed != null) setSeed(v.seed, { force: true, rebuild: true });
       updateHud();
       updateVisuals(0.016);
       renderer.render(scene, camera);

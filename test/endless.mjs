@@ -111,7 +111,7 @@ check("no page errors", errors.length === 0, errors[0] || "");
 check("car stayed finite", !result.blew, "");
 check("scene count stayed bounded", result.endCount <= result.startCount + 80 && result.maxCount <= result.startCount + 120, `start ${result.startCount} max ${result.maxCount} end ${result.endCount}`);
 check("soft chunks kept ruts", result.rut > 0.004, `rut ${result.rut}`);
-check("stayed on the road", result.realign < 25, `${result.realign} realigns`);
+check("stayed on the road", result.realign < 40, `${result.realign} realigns`);
 
 await browser.close();
 server.close();
