@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="iphone12pm-7">
+<meta name="car-build" content="voyage-5432">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -32,7 +32,7 @@
     overflow: hidden;
     background: #8ea4b4;
     color: var(--ink);
-    font-family: "Segoe UI", "Avenir Next Condensed", "Arial Narrow", sans-serif;
+    font-family: "Segoe UI", "DejaVu Sans", "Noto Sans", "Arial", sans-serif;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -116,8 +116,63 @@
     font-size: 12px;
     letter-spacing: 0.04em;
   }
-  #modes button[data-drive]::before { content: attr(data-drive); }
+  #modes button[data-drive="FWD"]::before { content: "ПП"; }
+  #modes button[data-drive="RWD"]::before { content: "ЗП"; }
+  #modes button[data-drive="AWD"]::before { content: "4×4"; }
   #tc::before { content: "TC"; }
+  #trip { display: flex; gap: 8px; align-items: center; pointer-events: none; }
+  .tbar { width: 58px; }
+  .tbar i { display: block; height: 7px; border-radius: 99px; background: #1a2128; overflow: hidden; }
+  .tbar i span { display: block; height: 100%; width: 0%; }
+  #fuel i span { background: #e2b43a; }
+  #temp i span { background: #ff7a3c; }
+  #batt i span { background: #7ee0a0; }
+  #odo {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    font-weight: 750;
+    font-size: 16px;
+    min-width: 7.2ch;
+  }
+  #wear {
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: 0.05em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+  }
+  #side {
+    position: fixed;
+    z-index: 4;
+    top: 118px;
+    right: calc(8px + env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: auto;
+  }
+  #side button {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #side svg { width: 22px; height: 22px; }
+  #rainfx {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(105deg, transparent 0 14px, rgba(190, 210, 225, 0.28) 14px 15px);
+    animation: streaks 0.45s linear infinite;
+    opacity: 0.85;
+  }
+  #rainfx.on { display: block; }
+  @keyframes streaks { from { background-position: 0 0; } to { background-position: -30px 90px; } }
   #forces svg, #reset svg { width: 18px; height: 18px; }
   #wheels {
     display: grid;
@@ -145,7 +200,7 @@
     font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
   }
   .swatch i { width: 12px; height: 12px; border-radius: 99px; display: block; }
-  #hint::before { content: "WASD or arrows · Space handbrake · 1 FWD · 2 RWD · 3 AWD · F forces · R reset"; }
+  #hint::before { content: "WASD · пробел ручник · ПП ЗП 4×4 · фары, дворники и дождь справа"; }
   #hint {
     left: calc(8px + env(safe-area-inset-left, 0px));
     right: calc(8px + env(safe-area-inset-right, 0px));
@@ -275,6 +330,11 @@
     #hud { gap: 4px; }
     #cluster { flex-wrap: nowrap; align-items: center; }
     #modes button { min-height: 30px; padding: 0 8px; }
+    #odo { font-size: 13px; }
+    #wear { font-size: 11px; }
+    #side { top: 74px; gap: 4px; }
+    #side button { width: 38px; height: 38px; }
+    .tbar { width: 44px; }
   }
   @media (orientation: portrait) {
     #rotate { display: flex; }
@@ -315,6 +375,12 @@
       <div id="rpmwrap"><div id="rpmfill"></div></div>
       <div id="rpm">900 RPM</div>
     </div>
+    <div id="trip" class="panel">
+      <div class="tbar" id="fuel" aria-label="Топливо"><i><span></span></i></div>
+      <div class="tbar" id="temp" aria-label="Температура"><i><span></span></i></div>
+      <div class="tbar" id="batt" aria-label="Аккумулятор"><i><span></span></i></div>
+      <div id="odo">00000.0</div>
+    </div>
     <div id="modes" class="panel">
       <button type="button" data-drive="FWD" aria-label="Front-wheel drive"></button>
       <button type="button" data-drive="RWD" class="on" aria-label="Rear-wheel drive"></button>
@@ -328,9 +394,18 @@
       </button>
     </div>
   </div>
+  <div id="wear">АСФАЛЬТ • ИЗНОС +0</div>
   <div id="wheels"></div>
   <div id="legend"></div>
 </div>
+<div id="side">
+  <button type="button" id="eng" aria-label="Двигатель"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9"/><path d="M7 6a8 8 0 1 0 10 0"/></svg></button>
+  <button type="button" id="cruise" aria-label="Круиз"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 8v4l3 2"/></svg></button>
+  <button type="button" id="lights" aria-label="Фары"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h4"/><path d="M9 8l8-3v14l-8-3z"/><path d="M19 9v6"/></svg></button>
+  <button type="button" id="wipers" aria-label="Дворники"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16c4-6 8-8 16-8"/><path d="M8 16l6-9"/></svg></button>
+  <button type="button" id="rainbtn" aria-label="Дождь"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15a5 5 0 1 1 1.2-9.8A6 6 0 0 1 18 11"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></svg></button>
+</div>
+<div id="rainfx"></div>
 <p id="hint"></p>
 <div id="touch">
   <div class="steer">
@@ -475,19 +550,19 @@ const CONFIG = {
   // mu is peak friction. lng/lat are Pacejka shapes: C near 1.2 keeps force high past the peak
   // (progressive slide); C near 1.55 lets it fall off. sink is 1/s, drag = sink * Fz * speed.
   surfaces: {
-    asphalt: { mu: 1.08, rolling: 0.011, sink: 0, lng: { B: 12.2, C: 1.62, E: 0.97 }, lat: { B: 9.4, C: 1.58, E: 0.97 }, color: "#4a4f56" },
-    wet: { mu: 0.68, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
-    dirt: { mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
-    grass: { mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
-    sand: { mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.32, recover: 0.3, gripLoss: 0.5, hDrag: 0.04, spinDamp: 650, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
-    snow: { mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.85, digAbove: 1.0, recoverBelow: 1.35, recover: 0.4, gripLoss: 0.72, hDrag: 0.055, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
-    mud: { mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 0.5, recover: 0.32, gripLoss: 0.65, hDrag: 0.08, spinDamp: 1400, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
-    ice: { mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
-    water: { mu: 0.62, rolling: 0.02, sink: 0, lng: { B: 7.2, C: 1.3, E: 0.97 }, lat: { B: 5.4, C: 1.26, E: 0.97 }, color: "#1c6e86" },
+    asphalt: { ru: "АСФАЛЬТ", mu: 1.08, rolling: 0.011, sink: 0, lng: { B: 12.2, C: 1.62, E: 0.97 }, lat: { B: 9.4, C: 1.58, E: 0.97 }, color: "#4a4f56" },
+    wet: { ru: "МОКРЫЙ", mu: 0.68, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
+    dirt: { ru: "ГРУНТОВКА", mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
+    grass: { ru: "ТРАВА", mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
+    sand: { ru: "ПЕСОК", mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.32, recover: 0.3, gripLoss: 0.5, hDrag: 0.04, spinDamp: 650, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
+    snow: { ru: "СНЕГ", mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.85, digAbove: 1.0, recoverBelow: 1.35, recover: 0.4, gripLoss: 0.72, hDrag: 0.055, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
+    mud: { ru: "ГРЯЗЬ", mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 0.5, recover: 0.32, gripLoss: 0.65, hDrag: 0.08, spinDamp: 1400, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
+    ice: { ru: "ЛЁД", mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
+    water: { ru: "ВОДА", mu: 0.62, rolling: 0.02, sink: 0, lng: { B: 7.2, C: 1.3, E: 0.97 }, lat: { B: 5.4, C: 1.26, E: 0.97 }, color: "#1c6e86" },
   },
   // Ford cut into the road. Depth is how far the bed sits under the water surface.
   water: {
-    ford: { x: -9, z: 20, w: 18, d: 34, depth: 0.62 },
+    ford: { x: -10, z: 28, w: 22, d: 18, depth: 0.55 },
     level: 0.03,
     shallow: 0.12,
     hub: 0.3,
@@ -500,40 +575,42 @@ const CONFIG = {
   track: {
     defaultSurface: "grass",
     blend: 2.6,
-    mesh: { minX: -102, maxX: 112, minZ: -40, maxZ: 420, res: 2.5 },
-    // First matching rectangle wins. x,z is the min corner. Long lanes so each surface can be driven.
+    // The straight x=-10..12, z=-44..20 stays open. The steering test starts at z=-32.
+    mesh: { minX: -40, maxX: 100, minZ: -52, maxZ: 214, res: 3 },
+    // First matching rectangle wins. The pieces join into one driveable loop.
     zones: [
-      { surface: "snow", x: -98, z: -40, w: 18, d: 420, mark: true },
-      { surface: "sand", x: -64, z: -40, w: 20, d: 420, mark: true },
-      { surface: "dirt", x: 22, z: -40, w: 18, d: 420, mark: true },
-      { surface: "wet", x: 44, z: -40, w: 16, d: 420, mark: true },
-      { surface: "ice", x: 64, z: -40, w: 16, d: 420, mark: true },
-      { surface: "mud", x: 84, z: -40, w: 18, d: 420, mark: true },
-      { surface: "wet", x: -9, z: 248, w: 18, d: 70, mark: true },
-      { surface: "ice", x: -9, z: 168, w: 18, d: 60, mark: true },
-      { surface: "asphalt", x: -9, z: -40, w: 18, d: 440 },
+      { surface: "snow", x: 66, z: 40, w: 22, d: 132 },
+      { surface: "dirt", x: 14, z: 154, w: 74, d: 26 },
+      { surface: "sand", x: 14, z: -16, w: 52, d: 56 },
+      { surface: "mud", x: 14, z: -44, w: 52, d: 28 },
+      { surface: "ice", x: 66, z: -16, w: 22, d: 56 },
+      { surface: "wet", x: -10.5, z: 128, w: 21.6, d: 22 },
+      { surface: "asphalt", x: -10.5, z: -44, w: 21.6, d: 230 },
+    ],
+    guardrails: [
+      { x: -12.15, z: 52, w: 0.7, d: 140, h: 0.95 },
+      { x: 11.45, z: 52, w: 0.7, d: 140, h: 0.95 },
+    ],
+    // cy is the sphere center height. A buried center leaves a rounded cap the wheels can climb.
+    rocks: [
+      { x: 28, z: 168, r: 1.15, cy: -0.35 },
+      { x: 42, z: 173, r: 1.35, cy: -0.5 },
+      { x: 55, z: 166, r: 0.95, cy: -0.22 },
+      { x: 68, z: 172, r: 1.2, cy: -0.4 },
+      { x: 36, z: 162, r: 0.8, cy: -0.18 },
     ],
     features: [
-      { type: "ford", x: -9, z: 20, w: 18, d: 34, depth: 0.62 },
-      { type: "bump", x: -10, z: 62, w: 20, d: 3.2, height: 0.16 },
-      { type: "whoops", x: -10, z: 82, w: 20, d: 32, amp: 0.28, cycles: 4 },
-      { type: "ramp", x: -10, z: 128, w: 20, d: 18, height: 1.7 },
+      { type: "ford", x: -10, z: 28, w: 22, d: 18, depth: 0.55 },
+      { type: "bump", x: -11, z: 64, w: 24, d: 3.2, height: 0.14 },
     ],
     labels: [
-      { text: "WATER", x: 14, z: 37, color: "#9fd8ea" },
-      { text: "ASPHALT", x: 14, z: 8, color: "#d7dde3" },
-      { text: "BUMP", x: 14, z: 62, color: "#ffbf3c" },
-      { text: "WHOOPS", x: 14, z: 98, color: "#ffbf3c" },
-      { text: "RAMP", x: 14, z: 136, color: "#ffbf3c" },
-      { text: "ICE", x: 14, z: 184, color: "#e7f4fb" },
-      { text: "WET", x: 14, z: 232, color: "#b7d4ea" },
-      { text: "SAND", x: -54, z: 18, color: "#f0ddb0" },
-      { text: "DIRT", x: 31, z: 18, color: "#f0c49a" },
-      { text: "WET LANE", x: 52, z: 18, color: "#b7d4ea" },
-      { text: "ICE LANE", x: 72, z: 18, color: "#e7f4fb" },
-      { text: "GRASS", x: -28, z: 12, color: "#d5f0c8" },
-      { text: "SNOW", x: -89, z: 16, color: "#f4fbff" },
-      { text: "MUD", x: 93, z: 16, color: "#d7c4a4" },
+      { text: "АСФАЛЬТ", x: 16, z: 8, color: "#f4f7fa" },
+      { text: "БРОД", x: 16, z: 36, color: "#9fd8ea" },
+      { text: "ГРУНТ", x: 40, z: 158, color: "#f0c49a" },
+      { text: "СНЕГ", x: 78, z: 90, color: "#f4fbff" },
+      { text: "ПЕСОК", x: 36, z: 8, color: "#f0ddb0" },
+      { text: "ГРЯЗЬ", x: 36, z: -30, color: "#d7c4a4" },
+      { text: "ЛЁД", x: 78, z: 8, color: "#e7f4fb" },
     ],
   },
   skid: { slip: 0.32, spacing: 0.18, pool: 260 },
@@ -763,9 +840,50 @@ function groundNormal(x, z) {
   return normalize(n);
 }
 
+function rayRocks(origin, dir, maxDist) {
+  let best = null;
+  for (const rock of CONFIG.track.rocks) {
+    const ocx = origin.x - rock.x;
+    const ocy = origin.y - rock.cy;
+    const ocz = origin.z - rock.z;
+    const c = ocx * ocx + ocy * ocy + ocz * ocz - rock.r * rock.r;
+    if (c < 0) {
+      const nl = Math.hypot(ocx, ocy, ocz) || 1;
+      return {
+        distance: 0,
+        point: { x: origin.x, y: origin.y, z: origin.z },
+        normal: { x: ocx / nl, y: ocy / nl, z: ocz / nl },
+        surface: "dirt",
+      };
+    }
+    const b = ocx * dir.x + ocy * dir.y + ocz * dir.z;
+    const disc = b * b - c;
+    if (disc < 0) continue;
+    const t = -b - Math.sqrt(disc);
+    if (t < 0 || t > maxDist) continue;
+    if (best && t >= best.distance) continue;
+    const px = origin.x + dir.x * t;
+    const py = origin.y + dir.y * t;
+    const pz = origin.z + dir.z * t;
+    const nx = px - rock.x;
+    const ny = py - rock.cy;
+    const nz = pz - rock.z;
+    const nl = Math.hypot(nx, ny, nz) || 1;
+    best = {
+      distance: t,
+      point: { x: px, y: py, z: pz },
+      normal: { x: nx / nl, y: ny / nl, z: nz / nl },
+      surface: "dirt",
+    };
+  }
+  return best;
+}
+
 function raycast(origin, dir, maxDist) {
+  const rockHit = rayRocks(origin, dir, maxDist);
   const h0 = groundHeight(origin.x, origin.z);
   if (origin.y <= h0) {
+    if (rockHit && rockHit.distance <= 0) return rockHit;
     return {
       distance: 0,
       point: { x: origin.x, y: h0, z: origin.z },
@@ -791,16 +909,17 @@ function raycast(origin, dir, maxDist) {
       }
       const hit = add(origin, mul(dir, hi));
       hit.y = groundHeight(hit.x, hit.z);
-      return {
+      const groundHit = {
         distance: hi,
         point: hit,
         normal: groundNormal(hit.x, hit.z),
         surface: surfaceAt(hit.x, hit.z),
       };
+      if (rockHit && rockHit.distance <= groundHit.distance) return rockHit;
+      return groundHit;
     }
   }
-  if (!found) return null;
-  return null;
+  return rockHit;
 }
 
 // ---------------------------------------------------------------------------
@@ -856,9 +975,24 @@ const state = {
   tick: 0,
   blewUp: false,
   minUp: 1,
+  engineOn: true,
+  fuel: 0.86,
+  coolant: 0.34,
+  battery: 0.78,
+  odo: 128.4,
+  cruise: false,
+  cruiseSpeed: 16,
+  lights: 0,
+  wipers: false,
+  rain: false,
+  wear: 0,
+  wearLine: "АСФАЛЬТ • ИЗНОС +0",
+  timeOfDay: 0.42,
+  impactCooldown: 0,
 };
 
 const input = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
+const impacts = [];
 let scripted = null;
 const keys = new Set();
 const touch = { throttle: 0, brake: 0, steerL: 0, steerR: 0, handbrake: 0 };
@@ -926,6 +1060,7 @@ function reset(opts = {}) {
   state.reverseHold = 0;
   state.engineOmega = (CONFIG.engine.idleRpm * TAU) / 60;
   state.steer = 0;
+  state.cruise = false;
   steerUi.angle = 0;
   steerUi.dragging = false;
   state.time = 0;
@@ -980,6 +1115,13 @@ function readInput() {
   const buttons = touch.steerR - touch.steerL;
   if (steerUi.dragging) input.steer = clamp(steerUi.angle / CONFIG.steer.wheelLock, -1, 1);
   else input.steer = clamp((keyR - keyL) + buttons, -1, 1);
+  if (state.cruise && state.engineOn) {
+    if (input.brake > 0.08 || input.throttle > 0.08) state.cruise = false;
+    else if (state.gear > 0) {
+      const speed = Math.hypot(state.velocity.x, state.velocity.z);
+      input.throttle = clamp((state.cruiseSpeed - speed) * 0.15, 0, 0.85);
+    }
+  }
 }
 
 // In reverse the brake pedal is the throttle and the gas pedal slows you.
@@ -1153,6 +1295,11 @@ function sampleTorque(rpm) {
 }
 
 function solvePowertrain(dt) {
+  if (!state.engineOn || state.fuel <= 0) {
+    state.engineOmega += ((0 - state.engineOmega) * dt) / 0.4;
+    for (const w of wheels) w.driveTorque = 0;
+    return;
+  }
   const shares = driveShares();
   const driven = [];
   for (let i = 0; i < wheels.length; i++) if (shares[i] > 0) driven.push(i);
@@ -1171,6 +1318,7 @@ function solvePowertrain(dt) {
   const pedal = pedals();
   const rpm = (state.engineOmega * 60) / TAU;
   let teng = sampleTorque(rpm) * pedal.throttle;
+  if (state.coolant > 0.92) teng *= 0.18;
   if (rpm < CONFIG.engine.idleRpm) teng += (CONFIG.engine.idleRpm - rpm) * CONFIG.engine.idleGain;
   if (rpm >= CONFIG.engine.limiterRpm) teng = Math.min(teng, 0);
   if (pedal.throttle < 0.02) teng -= CONFIG.engine.brakeNm * clamp(rpm / CONFIG.engine.maxRpm, 0, 1);
@@ -1266,7 +1414,11 @@ function solveTires(dt) {
     w.slipRatio += (kappa - w.slipRatio) * blend;
     w.slipAngle += (alpha - w.slipAngle) * blend;
 
-    const surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
+    let surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
+    if (state.rain && (w.surface === "asphalt" || w.surface === "wet")) {
+      const wet = CONFIG.surfaces.wet;
+      surf = { mu: wet.mu, rolling: wet.rolling, sink: surf.sink, lng: wet.lng, lat: wet.lat };
+    }
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
     const gripScale = 1 - (spec.gripLoss || 0) * clamp(w.sinkDepth, 0, 1);
@@ -1457,6 +1609,104 @@ function integrateChassis(dt) {
   if (!Number.isFinite(state.position.y + state.quat.w + state.velocity.x)) state.blewUp = true;
 }
 
+function noteImpact(point, normal, speed) {
+  if (state.impactCooldown > 0 || speed < 2.4) return;
+  state.impactCooldown = 0.45;
+  impacts.push({
+    x: point.x, y: point.y, z: point.z,
+    nx: normal.x, ny: normal.y, nz: normal.z,
+    speed,
+  });
+}
+
+function pushOutOfRail(p, box) {
+  if (p.y < -0.15 || p.y > box.h + 0.35) return null;
+  const x1 = box.x + box.w;
+  const z1 = box.z + box.d;
+  if (p.x < box.x || p.x > x1 || p.z < box.z || p.z > z1) return null;
+  const dl = p.x - box.x;
+  const dr = x1 - p.x;
+  const df = p.z - box.z;
+  const db = z1 - p.z;
+  const m = Math.min(dl, dr, df, db);
+  if (m === dl) return { n: { x: -1, y: 0, z: 0 }, pen: dl };
+  if (m === dr) return { n: { x: 1, y: 0, z: 0 }, pen: dr };
+  if (m === df) return { n: { x: 0, y: 0, z: -1 }, pen: df };
+  return { n: { x: 0, y: 0, z: 1 }, pen: db };
+}
+
+function resolveBarriers() {
+  const points = () => {
+    const list = [state.position];
+    for (const s of CONFIG.chassis.samples) list.push(localToWorld(s));
+    return list;
+  };
+  for (let iter = 0; iter < 3; iter++) {
+    let pushed = false;
+    for (const p of points()) {
+      for (const rail of CONFIG.track.guardrails) {
+        const hit = pushOutOfRail(p, rail);
+        if (!hit || hit.pen <= 0) continue;
+        const vn = state.velocity.x * hit.n.x + state.velocity.z * hit.n.z;
+        state.position.x += hit.n.x * (hit.pen + 0.03);
+        state.position.z += hit.n.z * (hit.pen + 0.03);
+        if (vn < 0) {
+          state.velocity.x -= hit.n.x * vn;
+          state.velocity.z -= hit.n.z * vn;
+        }
+        if (hit.pen > 0.02 && -vn > 1.6) noteImpact(p, hit.n, -vn);
+        pushed = true;
+      }
+      for (const rock of CONFIG.track.rocks) {
+        const d = { x: p.x - rock.x, y: p.y - rock.cy, z: p.z - rock.z };
+        const dist = vecLen(d);
+        const pen = rock.r + 0.08 - dist;
+        if (pen <= 0.03 || dist < 1e-4) continue;
+        const n = mul(d, 1 / dist);
+        if (n.y > 0.65) continue;
+        const vn = state.velocity.x * n.x + state.velocity.y * n.y + state.velocity.z * n.z;
+        state.position.x += n.x * pen;
+        state.position.y += n.y * pen * 0.35;
+        state.position.z += n.z * pen;
+        if (vn < 0) {
+          state.velocity.x -= n.x * vn;
+          state.velocity.y -= n.y * vn * 0.35;
+          state.velocity.z -= n.z * vn;
+        }
+        if (pen > 0.06 && -vn > 2) noteImpact(p, n, -vn);
+        pushed = true;
+      }
+    }
+    if (!pushed) break;
+  }
+}
+
+function stepTravel(dt) {
+  const speed = Math.hypot(state.velocity.x, state.velocity.z);
+  const rpm = (state.engineOmega * 60) / TAU;
+  const pedal = pedals();
+  if (state.engineOn && state.fuel > 0) {
+    const burn = (0.0032 + pedal.throttle * 0.011 + (rpm / 7000) * 0.0045) * dt;
+    state.fuel = Math.max(0, state.fuel - burn);
+    if (state.fuel <= 0) state.engineOn = false;
+  }
+  let slip = 0;
+  for (const w of wheels) slip += Math.abs(w.slipRatio);
+  slip /= wheels.length;
+  const heat = (pedal.throttle * 0.018 + Math.max(0, slip - 0.22) * 0.09) * dt;
+  const cool = 0.016 * dt * (state.coolant > 0.36 ? 1 : 0.35);
+  state.coolant = clamp(state.coolant + heat - cool, 0.16, 1);
+  const draw = (0.0012 + state.lights * 0.0055 + ((state.wipers || state.rain) ? 0.0025 : 0)) * dt;
+  state.battery = clamp(state.battery + (state.engineOn ? 0.012 : 0) * dt - draw, 0, 1);
+  if (state.battery <= 0.02) {
+    state.lights = 0;
+    state.wipers = false;
+  }
+  state.odo += (speed * dt) / 1000;
+  state.timeOfDay = (state.timeOfDay + dt / 180) % 1;
+  if (state.impactCooldown > 0) state.impactCooldown = Math.max(0, state.impactCooldown - dt);
+}
+
 function stepPhysics(dt) {
   if (state.blewUp) return;
   state.force.x = state.force.y = state.force.z = 0;
@@ -1473,6 +1723,7 @@ function stepPhysics(dt) {
   collideChassis();
   integrateWheels(dt);
   integrateChassis(dt);
+  resolveBarriers();
   // Wheel hubs are stored in world space for the axle meshes. Refresh them
   // after the body moves so a fast car does not leave the axles a step behind.
   for (const w of wheels) {
@@ -1483,6 +1734,7 @@ function stepPhysics(dt) {
     });
   }
   updateEffects(dt);
+  stepTravel(dt);
   state.time += dt;
 }
 
@@ -1493,6 +1745,54 @@ function stepPhysics(dt) {
 
 const specks = [];
 let speckI = 0;
+let smokeParts = [];
+let dirtParts = [];
+let smokeMesh = null;
+let dirtMesh = null;
+const partDummy = new THREE.Object3D();
+
+function spawnPart(pool, x, y, z, vx, vy, vz) {
+  for (const p of pool) {
+    if (p.life > 0) continue;
+    p.life = 0.75;
+    p.x = x;
+    p.y = y;
+    p.z = z;
+    p.vx = vx;
+    p.vy = vy;
+    p.vz = vz;
+    p.s = 0.22;
+    return;
+  }
+}
+
+function stepParts(pool, mesh, dt, grow) {
+  if (!mesh) return;
+  for (let i = 0; i < pool.length; i++) {
+    const p = pool[i];
+    if (p.life > 0) {
+      p.life -= dt;
+      p.vy -= 1.6 * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.z += p.vz * dt;
+      p.s = Math.min(p.s + grow * dt, 1.35);
+      const ground = groundHeight(p.x, p.z) + 0.06;
+      if (p.y < ground) {
+        p.y = ground;
+        p.vy = Math.abs(p.vy) * 0.15;
+      }
+    }
+    const alive = p.life > 0;
+    const s = alive ? p.s * Math.min(1, p.life * 2.2) : 0.001;
+    partDummy.position.set(p.x, alive ? p.y : -30, p.z);
+    partDummy.scale.setScalar(s);
+    partDummy.rotation.set(p.life * 2, p.life * 3, 0);
+    partDummy.updateMatrix();
+    mesh.setMatrixAt(i, partDummy.matrix);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+}
 let skidPool = [];
 let skidCursor = 0;
 let rutPool = [];
@@ -1506,6 +1806,8 @@ function hash01(n) {
 
 function clearEffects() {
   for (const p of specks) p.life = 0;
+  for (const p of smokeParts) p.life = 0;
+  for (const p of dirtParts) p.life = 0;
   for (const m of skidPool) m.visible = false;
   for (const m of rutPool) m.visible = false;
   skidCursor = 0;
@@ -1608,6 +1910,15 @@ function updateEffects(dt) {
         spray,
       );
     }
+    const burnout = Math.abs(w.slipRatio) > 0.42 || slip > 0.58;
+    if (paved && burnout && state.tick % 3 === 0) {
+      const puff = hash01(state.tick * 0.13 + w.spec.x);
+      spawnPart(smokeParts, w.contact.x, w.contact.y + 0.18, w.contact.z, -w.forward.x * 0.5 + (puff - 0.5), 1.1, -w.forward.z * 0.5);
+    }
+    const clod = w.surface === "dirt" || w.surface === "mud" || w.surface === "grass" || w.surface === "sand";
+    if (clod && (slip > 0.32 || w.sinkDepth > 0.22) && state.tick % 4 === 0) {
+      spawnPart(dirtParts, w.contact.x, w.contact.y + 0.12, w.contact.z, w.right.x * 1.2, 1.6, w.right.z * 1.2);
+    }
   }
   for (const p of specks) {
     if (p.life <= 0) continue;
@@ -1617,6 +1928,8 @@ function updateEffects(dt) {
     p.y += p.vy * dt;
     p.z += p.vz * dt;
   }
+  stepParts(smokeParts, smokeMesh, dt, 1.4);
+  stepParts(dirtParts, dirtMesh, dt, 0.6);
   state.tick++;
 }
 
@@ -1788,7 +2101,7 @@ function makeSurfaceAtlas() {
 }
 
 function groundMaterial(atlas) {
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02 });
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, metalness: 0, flatShading: true });
   mat.customProgramCacheKey = () => "surface-atlas-1";
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.atlasMap = { value: atlas };
@@ -1869,6 +2182,139 @@ function buildWater() {
   return mesh;
 }
 
+function buildLines() {
+  const mat = new THREE.MeshBasicMaterial({ color: 0xf4f4f4 });
+  for (let z = -40; z < 176; z += 5.5) {
+    if (z > 26 && z < 50) continue;
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.025, 2.1), mat);
+    dash.position.set(0, 0.045, z + 1);
+    scene.add(dash);
+  }
+  for (const x of [-9.15, 9.15]) {
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 168), mat);
+    edge.position.set(x, 0.04, 78);
+    scene.add(edge);
+  }
+}
+
+function buildForest() {
+  const count = 80;
+  const trunks = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.14, 0.22, 1.5, 5),
+    new THREE.MeshStandardMaterial({ color: 0x6d4428, flatShading: true, roughness: 0.95 }),
+    count,
+  );
+  const crowns = new THREE.InstancedMesh(
+    new THREE.ConeGeometry(0.95, 2.2, 5),
+    new THREE.MeshStandardMaterial({ color: 0x2f7d34, flatShading: true, roughness: 0.9 }),
+    count,
+  );
+  const dummy = new THREE.Object3D();
+  let seed = 11;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  const mesh = CONFIG.track.mesh;
+  let placed = 0;
+  let guard = 0;
+  while (placed < count && guard < 2500) {
+    guard++;
+    const x = mesh.minX + 6 + rnd() * (mesh.maxX - mesh.minX - 12);
+    const z = mesh.minZ + 6 + rnd() * (mesh.maxZ - mesh.minZ - 12);
+    if (surfaceAt(x, z) !== "grass") continue;
+    if (Math.abs(x) < 18 && z > -48 && z < 200) continue;
+    const s = 0.7 + rnd() * 0.85;
+    dummy.position.set(x, groundHeight(x, z) + 0.75 * s, z);
+    dummy.scale.set(s, s, s);
+    dummy.rotation.y = rnd() * TAU;
+    dummy.updateMatrix();
+    trunks.setMatrixAt(placed, dummy.matrix);
+    dummy.position.y += 1.35 * s;
+    dummy.updateMatrix();
+    crowns.setMatrixAt(placed, dummy.matrix);
+    placed++;
+  }
+  trunks.count = placed;
+  crowns.count = placed;
+  scene.add(trunks);
+  scene.add(crowns);
+}
+
+function buildRocks() {
+  const geo = new THREE.DodecahedronGeometry(1, 0);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x8d8478, flatShading: true, roughness: 0.92 });
+  for (const rock of CONFIG.track.rocks) {
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.scale.set(rock.r, rock.r * 0.82, rock.r);
+    mesh.position.set(rock.x, rock.cy + rock.r * 0.15, rock.z);
+    mesh.rotation.y = rock.x * 0.3;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  }
+}
+
+function buildRails() {
+  const metal = new THREE.MeshStandardMaterial({ color: 0xc5ccd1, metalness: 0.72, roughness: 0.32, flatShading: true });
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x8e969c, metalness: 0.5, roughness: 0.45, flatShading: true });
+  for (const rail of CONFIG.track.guardrails) {
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(rail.w, 0.16, rail.d), metal);
+    beam.position.set(rail.x + rail.w * 0.5, 0.72, rail.z + rail.d * 0.5);
+    beam.castShadow = true;
+    scene.add(beam);
+    const beam2 = beam.clone();
+    beam2.position.y = 0.42;
+    scene.add(beam2);
+    const posts = Math.max(2, Math.floor(rail.d / 4));
+    for (let i = 0; i < posts; i++) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.12), postMat);
+      post.position.set(rail.x + rail.w * 0.5, 0.45, rail.z + (i + 0.5) * (rail.d / posts));
+      scene.add(post);
+    }
+  }
+}
+
+let skyMat = null;
+let skyMesh = null;
+let moonMesh = null;
+function buildSky() {
+  skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      top: { value: new THREE.Color("#8ec6ef") },
+      horizon: { value: new THREE.Color("#f3d7b0") },
+      bottom: { value: new THREE.Color("#b7c9a4") },
+      sunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
+    },
+    vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
+    fragmentShader: "varying vec3 vP; uniform vec3 top; uniform vec3 horizon; uniform vec3 bottom; uniform vec3 sunDir; void main(){ float h = clamp(vP.y * 0.55 + 0.15, 0.0, 1.0); vec3 col = mix(bottom, horizon, smoothstep(0.0, 0.42, h)); col = mix(col, top, smoothstep(0.32, 0.85, h)); float sun = pow(max(dot(normalize(vP), normalize(sunDir)), 0.0), 160.0); col += vec3(1.0, 0.9, 0.7) * sun; gl_FragColor = vec4(col, 1.0); }",
+  });
+  skyMesh = new THREE.Mesh(new THREE.SphereGeometry(90, 16, 10), skyMat);
+  skyMesh.frustumCulled = false;
+  scene.add(skyMesh);
+  moonMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1.4, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0xf4f1e4 }),
+  );
+  scene.add(moonMesh);
+  const clouds = [];
+  const cloudMat = new THREE.MeshStandardMaterial({ color: 0xf7f4ee, flatShading: true, roughness: 1 });
+  for (let i = 0; i < 7; i++) {
+    const group = new THREE.Group();
+    for (let b = 0; b < 4; b++) {
+      const puff = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.1, 2.2), cloudMat);
+      puff.position.set((b - 1.5) * 2.1, (b % 2) * 0.5, (b - 1) * 0.6);
+      group.add(puff);
+    }
+    group.position.set(-30 + i * 18, 26 + (i % 3) * 4, -20 + (i % 4) * 22);
+    scene.add(group);
+    clouds.push(group);
+  }
+  scene.userData.clouds = clouds;
+}
+
 function buildTrack() {
   const mesh = CONFIG.track.mesh;
   const res = mesh.res;
@@ -1912,8 +2358,10 @@ function buildTrack() {
       } else {
         color.multiplyScalar(0.92 + 0.08 * Math.sin(x * 0.31) * Math.sin(z * 0.23));
       }
-      if (surf === "asphalt" && Math.abs(x) < 0.85 && (Math.floor(z / 4) % 2) === 0) {
-        color.lerp(new THREE.Color("#f4f4f4"), 0.8);
+      if (surf === "asphalt") {
+        const dash = Math.abs(x) < 0.42 && (Math.floor(z / 4) % 2) === 0;
+        const edge = Math.abs(Math.abs(x) - 8.4) < 0.38;
+        if (dash || edge) color.lerp(new THREE.Color("#f7f7f7"), 0.88);
       }
       colors[k] = color.r;
       colors[k + 1] = color.g;
@@ -1944,7 +2392,7 @@ function buildTrack() {
 
   const base = new THREE.Mesh(
     new THREE.PlaneGeometry(2000, 2000),
-    new THREE.MeshStandardMaterial({ color: CONFIG.surfaces.grass.color, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: CONFIG.surfaces.grass.color, roughness: 1, flatShading: true }),
   );
   base.rotation.x = -Math.PI / 2;
   base.position.y = -0.08;
@@ -1972,7 +2420,7 @@ function buildTrack() {
 
   // Posts sit behind the spawn camera so the crossbar never cuts the view.
   const gateMat = new THREE.MeshStandardMaterial({ color: 0xd3541a, roughness: 0.55 });
-  const gateZ = -14;
+  const gateZ = -46;
   for (const x of [-11, 11]) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.6, 0.28), gateMat);
     post.position.set(x, 0.8, gateZ);
@@ -2003,6 +2451,11 @@ function buildTrack() {
     sprite.scale.set(5.4, 1.35, 1);
     scene.add(sprite);
   }
+  buildLines();
+  buildForest();
+  buildRocks();
+  buildRails();
+  buildSky();
 }
 
 function makeTread() {
@@ -2024,52 +2477,81 @@ const chassis = new THREE.Group();
 scene.add(chassis);
 
 function buildCar() {
-  const paint = new THREE.MeshStandardMaterial({ color: 0xd3541a, roughness: 0.32, metalness: 0.42 });
-  const paintDark = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.4, metalness: 0.35 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x161b20, roughness: 0.55, metalness: 0.2 });
-  const glass = new THREE.MeshStandardMaterial({
-    color: 0xb7e0ef, roughness: 0.08, metalness: 0.15, transparent: true, opacity: 0.5,
-  });
-  const tailMat = new THREE.MeshStandardMaterial({ color: 0x9a1c1c, emissive: 0xff2218, emissiveIntensity: 0.35, roughness: 0.4 });
+  const flat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.72, metalness: 0, flatShading: true, ...extra });
+  const paint = flat(0xd6a21e, { roughness: 0.55 });
+  const paintDark = flat(0xa67c12, { roughness: 0.6 });
+  const dark = flat(0x1b1e22, { roughness: 0.8 });
+  const chrome = flat(0xd5dde3, { metalness: 0.85, roughness: 0.22 });
+  const glass = flat(0xb7e0ef, { roughness: 0.08, metalness: 0.05, transparent: true, opacity: 0.45 });
+  const tailMat = flat(0x9a1c1c, { emissive: 0xff2218, emissiveIntensity: 0.35, roughness: 0.5 });
+  const headMat = flat(0xfff4d0, { emissive: 0xfff1c2, emissiveIntensity: 0.35, roughness: 0.35 });
   chassis.userData.tailMat = tailMat;
-  const add = (mesh) => { mesh.castShadow = true; chassis.add(mesh); return mesh; };
-  const box = (w, h, d, mat, x, y, z, rx) => {
-    const m = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat));
+  chassis.userData.headMat = headMat;
+  chassis.userData.panels = [];
+  const add = (mesh, panel) => {
+    mesh.castShadow = true;
+    chassis.add(mesh);
+    if (panel) chassis.userData.panels.push(mesh);
+    return mesh;
+  };
+  const box = (w, h, d, mat, x, y, z, rx, panel = true) => {
+    const m = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat), panel);
     m.position.set(x, y, z);
     if (rx) m.rotation.x = rx;
     return m;
   };
-  // Lower body, hood, cabin, glass, bumpers, and arches. Wheels sit outside the tub.
-  box(1.38, 0.32, 3.15, paint, 0, 0.02, 0.05);
-  box(1.46, 0.12, 0.22, paintDark, 0, -0.02, 1.68);
-  box(1.46, 0.14, 0.2, paintDark, 0, 0.0, -1.68);
-  box(1.22, 0.1, 1.15, paint, 0, 0.2, 1.05, -0.14);
-  box(0.7, 0.16, 0.08, dark, 0, 0.08, 1.78);
-  box(1.18, 0.4, 1.45, dark, 0, 0.36, -0.12);
-  box(1.22, 0.06, 1.15, paintDark, 0, 0.58, -0.1);
-  box(1.08, 0.32, 0.04, glass, 0, 0.4, 0.58, 0.42);
-  box(1.05, 0.28, 0.04, glass, 0, 0.4, -0.82, -0.5);
-  box(0.04, 0.26, 0.7, glass, -0.6, 0.4, -0.12);
-  box(0.04, 0.26, 0.7, glass, 0.6, 0.4, -0.12);
-  box(1.42, 0.08, 2.5, dark, 0, -0.1, 0.05);
-  for (const x of [-0.8, 0.8]) {
-    for (const z of [1.32, -1.32]) {
-      const arch = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.055, 6, 10, Math.PI), paint);
-      arch.rotation.set(Math.PI, Math.PI / 2, 0);
-      arch.position.set(x, -0.02, z);
-      arch.castShadow = true;
-      chassis.add(arch);
-    }
+  // Boxy VAZ-2104 wagon. Wheel hubs stay at z = ±1.32.
+  box(1.52, 0.46, 3.55, paint, 0, 0.08, -0.05);
+  box(1.46, 0.1, 0.95, paint, 0, 0.32, 1.22, -0.08);
+  box(1.48, 0.5, 2.05, paintDark, 0, 0.5, -0.48);
+  box(1.42, 0.08, 1.9, paint, 0, 0.76, -0.5);
+  box(1.4, 0.42, 0.08, paint, 0, 0.4, -1.82);
+  box(1.62, 0.14, 0.12, chrome, 0, 0.02, 1.84, 0, false);
+  box(1.62, 0.14, 0.12, chrome, 0, 0.04, -1.9, 0, false);
+  box(1.48, 0.08, 2.4, dark, 0, -0.12, -0.05, 0, false);
+  box(0.08, 0.08, 1.7, chrome, -0.55, 0.86, -0.45, 0, false);
+  box(0.08, 0.08, 1.7, chrome, 0.55, 0.86, -0.45, 0, false);
+  box(0.78, 0.32, 0.95, flat(0x8a5a32), 0, 1.04, -0.55, 0, false);
+  box(1.12, 0.34, 0.05, glass, 0, 0.48, 0.58, 0.46, false);
+  box(1.16, 0.3, 0.05, glass, 0, 0.5, -1.7, -0.35, false);
+  box(0.05, 0.28, 1.15, glass, -0.74, 0.5, -0.45, 0, false);
+  box(0.05, 0.28, 1.15, glass, 0.74, 0.5, -0.45, 0, false);
+  const spare = add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.28, 0.12, 8),
+    flat(0x222222, { roughness: 0.9 }),
+  ), false);
+  spare.rotation.x = Math.PI / 2;
+  spare.position.set(0, 0.42, -1.96);
+  const spareRim = add(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.14, 0.04, 8),
+    flat(0xf4f4f4, { roughness: 0.35 }),
+  ), false);
+  spareRim.rotation.x = Math.PI / 2;
+  spareRim.position.set(0, 0.42, -2.02);
+  const wipers = [];
+  for (const x of [-0.28, 0.28]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, 0.4, 0.62);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.42), dark);
+    blade.position.set(0, 0, 0.2);
+    pivot.add(blade);
+    chassis.add(pivot);
+    wipers.push(pivot);
   }
+  chassis.userData.wipers = wipers;
   for (const x of [-0.52, 0.52]) {
-    const lamp = add(new THREE.Mesh(
-      new THREE.BoxGeometry(0.28, 0.1, 0.06),
-      new THREE.MeshStandardMaterial({ color: 0xfff4d0, emissive: 0xfff1c2, emissiveIntensity: 1.1, roughness: 0.25 }),
-    ));
-    lamp.position.set(x, 0.08, 1.8);
-    const tail = add(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.06), tailMat));
-    tail.position.set(x, 0.12, -1.8);
+    const lamp = add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.06), headMat), false);
+    lamp.position.set(x, 0.16, 1.8);
+    const tail = add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.06), tailMat), false);
+    tail.position.set(x, 0.28, -1.84);
   }
+  const spot = new THREE.SpotLight(0xfff1cc, 0, 36, 0.5, 0.4, 1.1);
+  spot.position.set(0, 0.4, 1.75);
+  spot.target.position.set(0, -0.35, 14);
+  spot.castShadow = false;
+  chassis.add(spot);
+  chassis.add(spot.target);
+  chassis.userData.spot = spot;
   const wheelRig = new THREE.Group();
   wheelRig.position.set(-0.28, 0.3, 0.28);
   wheelRig.rotation.x = 0.85;
@@ -2098,22 +2580,22 @@ function buildCar() {
   chassis.userData.steerWheel = wheelSpin;
 
   const tread = makeTread();
-  const tireMat = new THREE.MeshStandardMaterial({ map: tread, color: 0x222222, roughness: 0.85 });
+  const tireMat = new THREE.MeshStandardMaterial({ map: tread, color: 0x222222, roughness: 0.9, flatShading: true });
   const ghostMat = new THREE.MeshStandardMaterial({
     map: tread, color: 0x222222, transparent: true, opacity: 0.0, depthWrite: false,
   });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0xd5dde3, roughness: 0.32, metalness: 0.72 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.38, metalness: 0.08, flatShading: true });
 
   for (const w of wheels) {
     const steer = new THREE.Group();
     const spin = new THREE.Group();
     steer.add(spin);
-    const tireGeo = new THREE.CylinderGeometry(w.spec.radius, w.spec.radius, w.spec.width, 22, 1);
+    const tireGeo = new THREE.CylinderGeometry(w.spec.radius, w.spec.radius, w.spec.width, 10, 1);
     tireGeo.rotateZ(Math.PI / 2);
     const tire = new THREE.Mesh(tireGeo, tireMat);
     tire.castShadow = true;
     spin.add(tire);
-    const rimGeo = new THREE.CylinderGeometry(w.spec.radius * 0.58, w.spec.radius * 0.58, w.spec.width * 0.55, 18);
+    const rimGeo = new THREE.CylinderGeometry(w.spec.radius * 0.58, w.spec.radius * 0.58, w.spec.width * 0.55, 8);
     rimGeo.rotateZ(Math.PI / 2);
     const rim = new THREE.Mesh(rimGeo, rimMat);
     rim.position.x = w.spec.width * 0.22;
@@ -2210,6 +2692,23 @@ function buildEffects() {
     scene.add(m);
     rutPool.push(m);
   }
+  const ico = new THREE.IcosahedronGeometry(0.18, 0);
+  smokeMesh = new THREE.InstancedMesh(
+    ico,
+    new THREE.MeshStandardMaterial({ color: 0xd5dde4, transparent: true, opacity: 0.5, flatShading: true, depthWrite: false, roughness: 1 }),
+    22,
+  );
+  smokeMesh.frustumCulled = false;
+  scene.add(smokeMesh);
+  smokeParts = Array.from({ length: 22 }, () => ({ life: 0, x: 0, y: -30, z: 0, vx: 0, vy: 0, vz: 0, s: 0.2 }));
+  dirtMesh = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.16, 0.1, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0x6a3d22, flatShading: true, roughness: 1 }),
+    16,
+  );
+  dirtMesh.frustumCulled = false;
+  scene.add(dirtMesh);
+  dirtParts = Array.from({ length: 16 }, () => ({ life: 0, x: 0, y: -30, z: 0, vx: 0, vy: 0, vz: 0, s: 0.2 }));
   effectsReady = true;
 }
 
@@ -2261,6 +2760,116 @@ function snapCamera() {
   camReady = true;
 }
 
+function addScratch(mesh, localHit, outward) {
+  const scratches = chassis.userData.scratches || (chassis.userData.scratches = []);
+  if (scratches.length > 14) return;
+  const mark = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.34, 0.1),
+    new THREE.MeshBasicMaterial({ color: 0x241c14, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }),
+  );
+  mark.position.copy(localHit).addScaledVector(outward, 0.04);
+  mark.lookAt(mark.position.clone().add(outward));
+  mesh.add(mark);
+  scratches.push(mark);
+}
+
+function applyImpacts() {
+  const panels = chassis.userData.panels;
+  if (!panels) return;
+  while (impacts.length) {
+    const hit = impacts.pop();
+    let best = null;
+    let bestD = 1.05;
+    const at = new THREE.Vector3(hit.x, hit.y, hit.z);
+    for (const mesh of panels) {
+      const wp = new THREE.Vector3();
+      mesh.getWorldPosition(wp);
+      const d = wp.distanceTo(at);
+      if (d < bestD) {
+        best = mesh;
+        bestD = d;
+      }
+    }
+    if (!best) continue;
+    const attr = best.geometry.attributes.position;
+    const localHit = best.worldToLocal(at.clone());
+    const inward = best.worldToLocal(at.clone().add(new THREE.Vector3(-hit.nx, -hit.ny, -hit.nz))).sub(localHit);
+    if (inward.lengthSq() < 1e-6) inward.set(0, -1, 0);
+    inward.normalize();
+    let moved = 0;
+    for (let i = 0; i < attr.count; i++) {
+      const dx = attr.getX(i) - localHit.x;
+      const dy = attr.getY(i) - localHit.y;
+      const dz = attr.getZ(i) - localHit.z;
+      const dist = Math.hypot(dx, dy, dz);
+      if (dist > 0.72) continue;
+      const k = (1 - dist / 0.72) * 0.16;
+      attr.setXYZ(i, attr.getX(i) + inward.x * k, attr.getY(i) + inward.y * k, attr.getZ(i) + inward.z * k);
+      moved++;
+    }
+    if (!moved) continue;
+    attr.needsUpdate = true;
+    best.geometry.computeVertexNormals();
+    state.wear += 2;
+    const surf = surfaceAt(hit.x, hit.z);
+    const ru = (CONFIG.surfaces[surf] && CONFIG.surfaces[surf].ru) || "КУЗОВ";
+    state.wearLine = `${ru} • ИЗНОС +${state.wear}`;
+    addScratch(best, localHit, inward.clone().negate());
+  }
+}
+
+function updateAtmosphere(frameDt) {
+  const t = state.timeOfDay;
+  const elev = Math.sin((t - 0.25) * TAU);
+  const az = t * TAU;
+  const sunDir = new THREE.Vector3(Math.cos(az), elev, Math.sin(az)).normalize();
+  const day = clamp(elev * 0.5 + 0.5, 0, 1);
+  const rainDim = state.rain ? 0.55 : 1;
+  if (skyMat) {
+    skyMat.uniforms.top.value.set(state.rain ? "#4d6270" : "#8ec6ef").lerp(new THREE.Color("#070b16"), 1 - day);
+    skyMat.uniforms.horizon.value.set(state.rain ? "#6d624f" : "#f3d7b0").lerp(new THREE.Color("#1a120c"), 1 - day);
+    skyMat.uniforms.bottom.value.set("#8ea4b4").lerp(new THREE.Color("#05070c"), 1 - day);
+    skyMat.uniforms.sunDir.value.copy(sunDir);
+  }
+  if (skyMesh) skyMesh.position.copy(camera.position);
+  sun.intensity = Math.max(0, elev) * 1.25 * rainDim;
+  sun.position.set(
+    state.position.x + sunDir.x * 40,
+    state.position.y + Math.max(sunDir.y, 0.05) * 40,
+    state.position.z + sunDir.z * 40,
+  );
+  if (typeof hemi !== "undefined") hemi.intensity = (0.25 + day * 0.7) * rainDim;
+  fill.intensity = (0.08 + day * 0.3) * rainDim;
+  scene.fog.color.set(state.rain ? "#6a7278" : "#a9c0ce").lerp(new THREE.Color("#12161c"), 1 - day);
+  scene.fog.near = state.rain ? 28 : 45;
+  if (moonMesh) {
+    moonMesh.position.set(
+      state.position.x - sunDir.x * 60,
+      state.position.y + Math.max(-sunDir.y, 0.1) * 40,
+      state.position.z - sunDir.z * 60,
+    );
+    moonMesh.visible = elev < 0.15;
+  }
+  const clouds = scene.userData.clouds || [];
+  for (const cloud of clouds) {
+    cloud.position.x += frameDt * 1.6;
+    if (cloud.position.x > 80) cloud.position.x = -80;
+  }
+  const rainEl = document.getElementById("rainfx");
+  if (rainEl) rainEl.classList.toggle("on", state.rain);
+  const beam = state.battery > 0.02 ? state.lights : 0;
+  if (chassis.userData.headMat) chassis.userData.headMat.emissiveIntensity = beam === 0 ? 0.15 : beam === 1 ? 1.3 : 2.6;
+  if (chassis.userData.spot) {
+    const spot = chassis.userData.spot;
+    spot.intensity = beam === 0 ? 0 : beam === 1 ? 10 : 26;
+    spot.angle = beam === 2 ? 0.28 : 0.55;
+    spot.distance = beam === 2 ? 55 : 28;
+  }
+  const sweeping = state.wipers || state.rain;
+  const sweep = sweeping ? Math.sin(state.time * 2.6) : -0.85;
+  for (const wiper of chassis.userData.wipers || []) wiper.rotation.y = sweep * 0.9;
+}
+
 function updateVisuals(frameDt) {
   chassis.position.set(state.position.x, state.position.y, state.position.z);
   chassis.quaternion.set(state.quat.x, state.quat.y, state.quat.z, state.quat.w);
@@ -2295,6 +2904,8 @@ function updateVisuals(frameDt) {
     const braking = input.brake > 0.12 || input.handbrake > 0.15;
     chassis.userData.tailMat.emissiveIntensity = braking ? 2.4 : 0.35;
   }
+  applyImpacts();
+  updateAtmosphere(frameDt);
 
   const byAxle = { front: [], rear: [] };
   for (const w of wheels) byAxle[w.spec.axle].push(w);
@@ -2387,7 +2998,7 @@ function buildHud() {
   for (const [name, surf] of Object.entries(CONFIG.surfaces)) {
     const s = document.createElement("span");
     s.className = "swatch";
-    s.innerHTML = `<i></i>${name}`;
+    s.innerHTML = `<i></i>${surf.ru || name}`;
     s.querySelector("i").style.background = surf.color;
     legend.appendChild(s);
   }
@@ -2406,7 +3017,7 @@ function updateHud() {
   wheels.forEach((w, i) => {
     const card = hud.cards[i];
     const slip = Math.hypot(w.slipRatio, w.slipAngle * 2.2);
-    card.surf.textContent = w.surface;
+    card.surf.textContent = (CONFIG.surfaces[w.surface] && CONFIG.surfaces[w.surface].ru) || w.surface;
     card.slip.style.width = `${clamp(slip, 0, 1) * 100}%`;
     card.slip.style.background = slip > 0.45 ? "#ff5a45" : slip > 0.25 ? "#ffbf3c" : "#86f0b0";
     card.comp.style.width = `${clamp(w.compression / CONFIG.suspension.maxCompression, 0, 1) * 100}%`;
@@ -2422,6 +3033,36 @@ function updateHud() {
   document.getElementById("forces").classList.toggle("on", state.debug);
   const tcBtn = document.getElementById("tc");
   if (tcBtn) tcBtn.classList.toggle("on", state.tc);
+  const fuel = document.querySelector("#fuel span");
+  const temp = document.querySelector("#temp span");
+  const batt = document.querySelector("#batt span");
+  const odo = document.getElementById("odo");
+  const wear = document.getElementById("wear");
+  if (fuel) fuel.style.width = `${clamp(state.fuel, 0, 1) * 100}%`;
+  if (temp) {
+    temp.style.width = `${clamp(state.coolant, 0, 1) * 100}%`;
+    temp.style.background = state.coolant > 0.9 ? "#ff5a45" : "#ff7a3c";
+  }
+  if (batt) batt.style.width = `${clamp(state.battery, 0, 1) * 100}%`;
+  if (odo) {
+    const digits = state.odo.toFixed(1).padStart(7, "0");
+    odo.textContent = digits;
+  }
+  if (wear) {
+    const grounded = wheels.find((w) => w.inContact) || wheels[0];
+    const ru = (CONFIG.surfaces[grounded.surface] && CONFIG.surfaces[grounded.surface].ru) || "АСФАЛЬТ";
+    wear.textContent = `${ru} • ИЗНОС +${state.wear}`;
+  }
+  const eng = document.getElementById("eng");
+  const cruise = document.getElementById("cruise");
+  const lights = document.getElementById("lights");
+  const wipers = document.getElementById("wipers");
+  const rainBtn = document.getElementById("rainbtn");
+  if (eng) eng.classList.toggle("on", state.engineOn);
+  if (cruise) cruise.classList.toggle("on", state.cruise);
+  if (lights) lights.classList.toggle("on", state.lights > 0);
+  if (wipers) wipers.classList.toggle("on", state.wipers);
+  if (rainBtn) rainBtn.classList.toggle("on", state.rain);
 }
 
 function setDrive(mode) {
@@ -2533,6 +3174,30 @@ function bindInput() {
     reset();
     e.preventDefault();
   });
+  const toggle = (id, fn) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      fn();
+      updateHud();
+      e.preventDefault();
+    });
+  };
+  toggle("eng", () => {
+    if (state.engineOn) state.engineOn = false;
+    else if (state.fuel > 0 && state.battery > 0.03) {
+      state.engineOn = true;
+      state.engineOmega = Math.max(state.engineOmega, (CONFIG.engine.idleRpm * TAU) / 60);
+    }
+  });
+  toggle("cruise", () => {
+    state.cruise = !state.cruise;
+    if (state.cruise) state.cruiseSpeed = Math.max(8, Math.hypot(state.velocity.x, state.velocity.z));
+  });
+  toggle("lights", () => { state.lights = (state.lights + 1) % 3; });
+  toggle("wipers", () => { state.wipers = !state.wipers; });
+  toggle("rainbtn", () => { state.rain = !state.rain; });
 }
 
 function scheduleFit() {
@@ -2666,7 +3331,38 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "iphone12pm-7",
+    build: "voyage-5432",
+    setScene(v = {}) {
+      if (v.timeOfDay != null) state.timeOfDay = v.timeOfDay;
+      if (v.rain != null) state.rain = !!v.rain;
+      if (v.lights != null) state.lights = v.lights;
+      if (v.wipers != null) state.wipers = !!v.wipers;
+      if (v.engineOn != null) state.engineOn = !!v.engineOn;
+      if (v.fuel != null) state.fuel = v.fuel;
+      if (v.coolant != null) state.coolant = v.coolant;
+      if (v.battery != null) state.battery = v.battery;
+      if (v.odo != null) state.odo = v.odo;
+      if (v.wear != null) state.wear = v.wear;
+      if (v.cruise != null) state.cruise = !!v.cruise;
+      updateHud();
+      updateVisuals(0.016);
+      renderer.render(scene, camera);
+    },
+    look(dx, dy, dz) {
+      camera.position.set(state.position.x + dx, state.position.y + dy, state.position.z + dz);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(state.position.x, state.position.y + 0.4, state.position.z);
+      renderer.render(scene, camera);
+    },
+    dent(local, normal) {
+      const p = localToWorld(local);
+      const n = normal || { x: 1, y: 0, z: 0 };
+      impacts.push({ x: p.x, y: p.y, z: p.z, nx: n.x, ny: n.y, nz: n.z, speed: 6 });
+      state.impactCooldown = 0;
+      applyImpacts();
+      updateVisuals(0.016);
+      renderer.render(scene, camera);
+    },
     fitRenderer,
     viewMetrics() {
       const size = new THREE.Vector2();
