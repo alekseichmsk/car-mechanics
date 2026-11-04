@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="voyage-5432d">
+<meta name="car-build" content="voyage-5432e">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -576,13 +576,14 @@ const CONFIG = {
   surfaces: {
     asphalt: { ru: "АСФАЛЬТ", mu: 1.08, rolling: 0.011, sink: 0, lng: { B: 12.2, C: 1.62, E: 0.97 }, lat: { B: 9.4, C: 1.58, E: 0.97 }, color: "#4a4f56" },
     wet: { ru: "МОКРЫЙ", mu: 0.68, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
-    dirt: { ru: "ГРУНТОВКА", mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
+    dirt: { ru: "ГРУНТОВКА", mu: 0.7, rolling: 0.022, sink: 0.004, lng: { B: 8.2, C: 1.35, E: 0.95 }, lat: { B: 6.0, C: 1.3, E: 0.95 }, color: "#8a5a30" },
+    gravel: { ru: "ГРАВИЙ", mu: 0.66, rolling: 0.028, sink: 0.004, lng: { B: 7.6, C: 1.32, E: 0.95 }, lat: { B: 5.6, C: 1.26, E: 0.95 }, color: "#7d756c" },
     grass: { ru: "ТРАВА", mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
     sand: { ru: "ПЕСОК", mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.4, digAbove: 0.28, recoverBelow: 0.7, recover: 0.28, gripLoss: 0.4, hDrag: 0.05, spinDamp: 650, deform: true, sinkMax: 0.09, bull: 4200, bullSlip: 0.8, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
     snow: { ru: "СНЕГ", mu: 0.5, rolling: 0.02, sink: 0.004, loose: true, slipGain: 0.9, digAbove: 0.4, recover: 0.28, gripLoss: 0.12, hDrag: 0.04, spinDamp: 700, deform: true, sinkMax: 0.18, restSink: 0.16, sinkCap: 0.48, sinkCapBrake: 0.8, bull: 6200, bellyGive: 0.14, lng: { B: 6.4, C: 1.35, E: 0.96 }, lat: { B: 5.0, C: 1.28, E: 0.96 }, color: "#e7eef3" },
     drift: { ru: "СУГРОБ", mu: 0.56, rolling: 0.016, sink: 0.002, loose: true, slipGain: 0.5, digAbove: 0.62, recover: 0.16, gripLoss: 0.05, hDrag: 0.155, spinDamp: 350, deform: true, sinkMax: 0.14, restSink: 0.28, sinkCap: 0.5, sinkCapBrake: 0.8, bull: 5600, bellyGive: 0.2, lng: { B: 6.2, C: 1.15, E: 0.88 }, lat: { B: 4.8, C: 1.16, E: 0.9 }, color: "#f4f7fb" },
     pack: { ru: "НАСТ", mu: 0.2, rolling: 0.012, sink: 0.001, loose: true, slipGain: 0.15, digAbove: 0.8, recoverBelow: 0.5, recover: 0.8, gripLoss: 0.05, hDrag: 0.01, deform: true, sinkMax: 0.02, bull: 0, lng: { B: 6.2, C: 1.35, E: 0.97 }, lat: { B: 4.6, C: 1.3, E: 0.97 }, color: "#d5e0e8" },
-    mud: { ru: "ГРЯЗЬ", mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 1.15, digAbove: 0.22, recoverBelow: 0.75, recover: 0.22, gripLoss: 0.4, hDrag: 0.09, spinDamp: 1400, deform: true, sinkMax: 0.16, restSink: 0.22, bull: 7600, bullSlip: 1.15, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
+    mud: { ru: "ГРЯЗЬ", mu: 0.5, rolling: 0.026, sink: 0.004, loose: true, slipGain: 0.45, digAbove: 0.7, recover: 0.3, gripLoss: 0.12, hDrag: 0.07, spinDamp: 500, deform: true, sinkMax: 0.12, restSink: 0.14, sinkCap: 0.45, sinkCapBrake: 0.7, bull: 3800, bellyGive: 0.12, lng: { B: 6.0, C: 1.16, E: 0.9 }, lat: { B: 4.6, C: 1.16, E: 0.92 }, color: "#4a3424" },
     ice: { ru: "ЛЁД", mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
     water: { ru: "ВОДА", mu: 0.62, rolling: 0.02, sink: 0, lng: { B: 7.2, C: 1.3, E: 0.97 }, lat: { B: 5.4, C: 1.26, E: 0.97 }, color: "#1c6e86" },
   },
@@ -600,7 +601,7 @@ const CONFIG = {
   },
   track: {
     defaultSurface: "grass",
-    blend: 2.6,
+    blend: 5.2,
     // The straight x=-10..12, z=-44..20 stays open. The steering test starts at z=-32.
     mesh: { minX: -40, maxX: 100, minZ: -52, maxZ: 214, res: 3 },
     // First matching rectangle wins. The pieces join into one driveable loop.
@@ -817,11 +818,57 @@ function assertMath() {
 // Terrain. Height and grip are pure functions of x,z — the mesh only draws them.
 // ---------------------------------------------------------------------------
 
+const ROAD = {
+  half: 8.4,
+  seg: 150,
+  chunk: 42,
+  plain: 100,
+  ahead: 170,
+  behind: 70,
+  cycle: ["asphalt", "dirt", "rocks", "sand", "mud", "drift", "pack", "ice", "water"],
+  names: { asphalt: "АСФАЛЬТ", dirt: "ГРУНТ", rocks: "КАМНИ", sand: "ПЕСОК", mud: "ГРЯЗЬ", drift: "СУГРОБ", pack: "НАСТ", ice: "ЛЁД", water: "БРОД" },
+};
+
+function roadFade(z) {
+  return smoothstep(ROAD.plain, ROAD.plain + 240, Math.abs(z));
+}
+function roadX(z) {
+  return roadFade(z) * (12 * Math.sin(z * 0.0055) + 4 * Math.sin(z * 0.013 + 0.7));
+}
+function roadY(z) {
+  return roadFade(z) * (1.05 * Math.sin(z * 0.0048) + 0.28 * Math.sin(z * 0.012));
+}
+function roadHeading(z) {
+  const e = 2;
+  return Math.atan2(roadX(z + e) - roadX(z - e), 2 * e);
+}
+function segKind(z) {
+  if (z >= -ROAD.plain && z <= ROAD.plain) return "asphalt";
+  const shifted = Math.abs(z) - ROAD.plain;
+  const n = Math.floor(shifted / ROAD.seg);
+  return ROAD.cycle[n % ROAD.cycle.length];
+}
+function segStartZ(z) {
+  if (Math.abs(z) <= ROAD.plain) return z >= 0 ? -ROAD.plain : -ROAD.plain;
+  const sign = Math.sign(z) || 1;
+  const shifted = Math.abs(z) - ROAD.plain;
+  return sign * (ROAD.plain + Math.floor(shifted / ROAD.seg) * ROAD.seg);
+}
+function distToSegEdge(z) {
+  const az = Math.abs(z);
+  if (az <= ROAD.plain) return Math.min(ROAD.plain - z, z + ROAD.plain);
+  const start = segStartZ(z);
+  const sign = Math.sign(z) || 1;
+  const end = start + sign * ROAD.seg;
+  return Math.min(Math.abs(z - start), Math.abs(end - z));
+}
+
 function surfaceAt(x, z) {
-  for (const zone of CONFIG.track.zones) {
-    if (x >= zone.x && x <= zone.x + zone.w && z >= zone.z && z <= zone.z + zone.d) return zone.surface;
-  }
-  return CONFIG.track.defaultSurface;
+  if (Math.abs(x - roadX(z)) > ROAD.half + 2) return "grass";
+  const kind = segKind(z);
+  if (kind === "rocks") return "gravel";
+  if (kind === "water") return "asphalt";
+  return kind;
 }
 
 // Blend grip a couple of metres across a zone edge so the car doesn't hit a friction cliff.
@@ -875,18 +922,37 @@ function featureHeight(x, z, f) {
 }
 
 function waterDepth(x, z) {
-  const f = CONFIG.water.ford;
-  const u = (x - f.x) / f.w;
-  const v = (z - f.z) / f.d;
-  if (u <= 0 || u >= 1 || v <= 0 || v >= 1) return 0;
-  const side = smoothstep(0, 0.14, u) * smoothstep(1, 0.86, u);
-  return f.depth * Math.sin(Math.PI * v) * side;
+  if (segKind(z) !== "water") return 0;
+  const dx = x - roadX(z);
+  if (Math.abs(dx) > 6.4) return 0;
+  const start = segStartZ(z);
+  const v = clamp((z - start) / ROAD.seg, 0, 1);
+  const edge = smoothstep(0.06, 0.18, v) * smoothstep(0.94, 0.82, v);
+  const side = 1 - (dx / 6.4) ** 2;
+  return 0.48 * edge * Math.max(side, 0);
+}
+
+function detailHeight(x, z, dx) {
+  const kind = segKind(z);
+  const fade = smoothstep(0, 14, distToSegEdge(z));
+  let h = 0;
+  if (kind === "sand") h = 0.045 * Math.sin(x * 1.6 + z * 0.45) + 0.18 * Math.sin(z * 0.05) * Math.sin(x * 0.08);
+  else if (kind === "mud") h = 0.05 * Math.sin(x * 0.7) * Math.sin(z * 0.55);
+  else if (kind === "drift") {
+    const side = clamp((Math.abs(dx) - 5.6) / 1.6, 0, 1);
+    h = side * 0.42 * (0.65 + 0.35 * Math.sin(z * 0.07));
+  } else if (kind === "pack") h = 0.015 * Math.sin(x * 0.9 + z * 0.3);
+  return h * fade;
 }
 
 function terrainHeight(x, z) {
-  let h = 0;
-  for (const f of CONFIG.track.features) h += featureHeight(x, z, f);
-  return h;
+  const dx = x - roadX(z);
+  let y = roadY(z);
+  const ad = Math.abs(dx);
+  if (ad > ROAD.half) y -= Math.min((ad - ROAD.half) * 0.06, 1.1);
+  y -= waterDepth(x, z);
+  y += detailHeight(x, z, dx);
+  return y;
 }
 
 const softChunks = [];
@@ -1036,7 +1102,7 @@ function carveSoft(x, z, depth) {
         const d = Math.hypot(px - x, pz - z);
         if (d > rad) continue;
         const k = j * c.cols + i;
-        const bite = -depth * (1 - d / rad) * edgeFade(c, px, pz);
+        const bite = -depth * (1 - d / rad) * (c.road ? 1 : edgeFade(c, px, pz));
         if (bite < c.disp[k]) {
           c.disp[k] = bite;
           const p = k * 3;
@@ -1073,6 +1139,294 @@ function flushSoft() {
   }
 }
 
+const roadIndex = new Map();
+const signTex = new Map();
+
+function signTexture(label) {
+  if (signTex.has(label)) return signTex.get(label);
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 64;
+  const g = c.getContext("2d");
+  g.fillStyle = "rgba(12,14,16,0.8)";
+  g.fillRect(0, 0, 256, 64);
+  g.fillStyle = "#f4f7fa";
+  g.font = "700 36px sans-serif";
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(label, 128, 34);
+  const tex = new THREE.CanvasTexture(c);
+  signTex.set(label, tex);
+  return tex;
+}
+
+let sharedRockGeo = null;
+function rockGeometry() {
+  if (!sharedRockGeo) sharedRockGeo = new THREE.DodecahedronGeometry(1, 0);
+  return sharedRockGeo;
+}
+
+function chunkRocks(z0, d) {
+  const rocks = [];
+  for (let z = z0 + 3; z < z0 + d - 2; z += 5.5) {
+    if (segKind(z) !== "rocks") continue;
+    const cx = roadX(z);
+    const slots = [
+      [-2.6, 0.16 + hash01(z) * 0.2],
+      [2.7, 0.14 + hash01(z + 3) * 0.18],
+      [-5.4, 0.62 + hash01(z + 1) * 0.35],
+      [5.5, 0.58 + hash01(z + 2) * 0.4],
+    ];
+    for (const [lat, h] of slots) {
+      const x = cx + lat;
+      const r = Math.max(0.14, h * 0.82);
+      const gy = terrainHeight(x, z);
+      rocks.push({ x, z, r, cy: gy + h - r, crawl: true });
+    }
+  }
+  return rocks;
+}
+
+function chunkRails(z0, d) {
+  const rails = [];
+  for (let z = z0; z < z0 + d; z += 10.5) {
+    if (Math.abs(z + 5) < ROAD.plain) continue;
+    if (segKind(z + 5) !== "asphalt") continue;
+    const cx = roadX(z + 5);
+    const y = terrainHeight(cx, z + 5);
+    rails.push({ x: cx + ROAD.half + 0.15, z, y, w: 0.42, d: 10.2, h: 0.85 });
+    rails.push({ x: cx - ROAD.half - 0.55, z, y, w: 0.42, d: 10.2, h: 0.85 });
+  }
+  return rails;
+}
+
+function makeRoadChunk(index) {
+  const z0 = index * ROAD.chunk;
+  const d = ROAD.chunk;
+  const res = 1.2;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (let z = z0; z <= z0 + d; z += 3) {
+    const cx = roadX(z);
+    minX = Math.min(minX, cx - 16);
+    maxX = Math.max(maxX, cx + 16);
+  }
+  const x0 = minX;
+  const w = Math.max(8, maxX - minX);
+  const cols = Math.floor(w / res) + 1;
+  const rows = Math.floor(d / res) + 1;
+  const base = new Float32Array(cols * rows);
+  const disp = new Float32Array(cols * rows);
+  const positions = new Float32Array(cols * rows * 3);
+  const colors = new Float32Array(cols * rows * 3);
+  const color = new THREE.Color();
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      const x = x0 + i * res;
+      const z = z0 + j * res;
+      const y = terrainHeight(x, z);
+      const p = (j * cols + i) * 3;
+      positions[p] = x;
+      positions[p + 1] = y + 0.01;
+      positions[p + 2] = z;
+      const surf = surfaceAt(x, z);
+      const spec = CONFIG.surfaces[surf] || CONFIG.surfaces.grass;
+      color.set(spec.color);
+      const edge = distToSegEdge(z);
+      if (edge < 12) {
+        const nz = z + (z >= 0 ? 8 : -8);
+        const other = CONFIG.surfaces[surfaceAt(x, nz)] || spec;
+        if (other !== spec) color.lerp(new THREE.Color(other.color), (1 - edge / 12) * 0.65);
+      }
+      const tint = 0.9 + hash01(i * 3.1 + j * 1.7 + index) * 0.18;
+      colors[p] = color.r * tint;
+      colors[p + 1] = color.g * tint;
+      colors[p + 2] = color.b * tint;
+    }
+  }
+  const indices = [];
+  for (let j = 0; j < rows - 1; j++) {
+    for (let i = 0; i < cols - 1; i++) {
+      const a = j * cols + i;
+      indices.push(a, a + cols, a + 1, a + 1, a + cols, a + cols + 1);
+    }
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  const mesh = new THREE.Mesh(
+    geom,
+    new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.94 }),
+  );
+  mesh.receiveShadow = true;
+  const group = new THREE.Group();
+  group.add(mesh);
+  const rocks = chunkRocks(z0, d);
+  const rockGeo = rockGeometry();
+  for (const rock of rocks) {
+    const shade = 0.45 + hash01(rock.x * 2 + rock.z) * 0.35;
+    const rockMesh = new THREE.Mesh(
+      rockGeo,
+      new THREE.MeshStandardMaterial({ color: new THREE.Color(shade, shade * 0.92, shade * 0.82), flatShading: true, roughness: 0.95 }),
+    );
+    rockMesh.scale.set(rock.r, rock.r * 0.8, rock.r);
+    rockMesh.position.set(rock.x, rock.cy, rock.z);
+    rockMesh.rotation.y = rock.x;
+    rockMesh.castShadow = rock.cy + rock.r > 0.4;
+    group.add(rockMesh);
+  }
+  const rails = chunkRails(z0, d);
+  const railMat = new THREE.MeshStandardMaterial({ color: 0xc5ccd1, metalness: 0.6, roughness: 0.35, flatShading: true });
+  for (const rail of rails) {
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(rail.w, 0.14, rail.d), railMat);
+    beam.position.set(rail.x + rail.w * 0.5, (rail.y || 0) + 0.62, rail.z + rail.d * 0.5);
+    group.add(beam);
+  }
+  const kind = segKind(z0 + d * 0.5);
+  if (kind === "water") {
+    const cx = roadX(z0 + d * 0.5);
+    const bed = terrainHeight(cx, z0 + d * 0.5) + waterDepth(cx, z0 + d * 0.5);
+    const water = new THREE.Mesh(
+      new THREE.PlaneGeometry(14, d * 0.92, 8, 6),
+      new THREE.MeshStandardMaterial({ color: 0x1c6e86, transparent: true, opacity: 0.72, roughness: 0.15, metalness: 0.15, flatShading: true }),
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(cx, bed + 0.05, z0 + d * 0.5);
+    group.add(water);
+  }
+  const start = segStartZ(z0 + 2);
+  if (start >= z0 && start < z0 + d && Math.abs(start) > ROAD.plain - 1) {
+    const label = ROAD.names[segKind(start + 2)] || "ДОРОГА";
+    const board = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.2, 0.8),
+      new THREE.MeshBasicMaterial({ map: signTexture(label), transparent: true }),
+    );
+    const cx = roadX(start);
+    const sy = roadY(start);
+    board.position.set(cx + ROAD.half + 1.8, sy + 1.7, start + 1.2);
+    board.rotation.y = roadHeading(start) + Math.PI;
+    group.add(board);
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 1.7, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0x6b4428, flatShading: true }),
+    );
+    post.position.set(board.position.x, sy + 0.85, board.position.z);
+    group.add(post);
+  }
+  for (let t = 0; t < 5; t++) {
+    const z = z0 + 4 + t * 8;
+    const side = t % 2 === 0 ? 1 : -1;
+    const x = roadX(z) + side * (ROAD.half + 3.5);
+    if (Math.abs(x) > 80) continue;
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.18, 1.3, 5),
+      new THREE.MeshStandardMaterial({ color: 0x6b4428, flatShading: true }),
+    );
+    trunk.position.set(x, terrainHeight(x, z) + 0.65, z);
+    const crown = new THREE.Mesh(
+      new THREE.ConeGeometry(0.8, 1.8, 5),
+      new THREE.MeshStandardMaterial({ color: 0x2f7d34, flatShading: true }),
+    );
+    crown.position.set(x, trunk.position.y + 1.3, z);
+    group.add(trunk);
+    group.add(crown);
+  }
+  scene.add(group);
+  const chunk = {
+    road: true,
+    index,
+    x: x0,
+    z: z0,
+    w,
+    d,
+    res,
+    cols,
+    rows,
+    base,
+    disp,
+    positions,
+    geom,
+    mesh,
+    group,
+    rocks,
+    rails,
+    dirty: false,
+  };
+  chunk.sample = (px, pz) => {
+    const u = (px - chunk.x) / chunk.res;
+    const v = (pz - chunk.z) / chunk.res;
+    if (u < 0 || v < 0 || u > chunk.cols - 1 || v > chunk.rows - 1) return 0;
+    const i = clamp(Math.floor(u), 0, chunk.cols - 2);
+    const j = clamp(Math.floor(v), 0, chunk.rows - 2);
+    const tx = clamp(u - i, 0, 1);
+    const tz = clamp(v - j, 0, 1);
+    const at = (ii, jj) => chunk.disp[jj * chunk.cols + ii];
+    return at(i, j) * (1 - tx) * (1 - tz) + at(i + 1, j) * tx * (1 - tz) + at(i, j + 1) * (1 - tx) * tz + at(i + 1, j + 1) * tx * tz;
+  };
+  softChunks.push(chunk);
+  roadIndex.set(index, chunk);
+  return chunk;
+}
+
+function disposeChunk(c) {
+  scene.remove(c.group);
+  c.group.traverse((o) => {
+    if (o.geometry && o.geometry.type !== "DodecahedronGeometry") o.geometry.dispose();
+    if (o.material && !o.material.userData.shared) o.material.dispose();
+  });
+  const i = softChunks.indexOf(c);
+  if (i >= 0) softChunks.splice(i, 1);
+  roadIndex.delete(c.index);
+}
+
+function ensureRoad(z) {
+  const size = ROAD.chunk;
+  const a = Math.floor((z - ROAD.behind) / size);
+  const b = Math.floor((z + ROAD.ahead) / size);
+  const keep = new Set();
+  for (let i = a; i <= b; i++) {
+    keep.add(i);
+    if (!roadIndex.has(i)) makeRoadChunk(i);
+  }
+  for (const [i, c] of roadIndex) {
+    if (!keep.has(i)) disposeChunk(c);
+  }
+}
+
+function roadSpot(kind) {
+  if (kind === "grass") {
+    const z = 20;
+    const lane = ROAD.half + 5.2;
+    return { x: roadX(z) + lane, z, yaw: 0, kind: "grass", lane };
+  }
+  if (kind === "asphalt") return { x: 0, z: 0, yaw: 0, kind: "asphalt", lane: 0 };
+  for (let z = ROAD.plain + 20; z < ROAD.plain + ROAD.seg * ROAD.cycle.length; z += 20) {
+    if (segKind(z) !== kind) continue;
+    return { x: roadX(z + 30), z: z + 30, yaw: roadHeading(z + 30), kind };
+  }
+  return { x: 0, z: 4, yaw: 0, kind: "asphalt" };
+}
+
+function rocksNear(z) {
+  const list = [];
+  for (const c of softChunks) {
+    if (!c.rocks || z < c.z - 2 || z > c.z + c.d + 2) continue;
+    for (const rock of c.rocks) list.push(rock);
+  }
+  return list;
+}
+
+function railsNear(z) {
+  const list = [];
+  for (const c of softChunks) {
+    if (!c.rails || z < c.z - 2 || z > c.z + c.d + 2) continue;
+    for (const rail of c.rails) list.push(rail);
+  }
+  return list;
+}
+
 function groundHeight(x, z) {
   return terrainHeight(x, z) + softSample(x, z);
 }
@@ -1092,7 +1446,7 @@ function groundNormal(x, z) {
 
 function rayRocks(origin, dir, maxDist) {
   let best = null;
-  for (const rock of CONFIG.track.rocks) {
+  for (const rock of rocksNear(origin.z)) {
     const ocx = origin.x - rock.x;
     const ocy = origin.y - rock.cy;
     const ocz = origin.z - rock.z;
@@ -1103,7 +1457,7 @@ function rayRocks(origin, dir, maxDist) {
         distance: 0,
         point: { x: origin.x, y: origin.y, z: origin.z },
         normal: { x: ocx / nl, y: ocy / nl, z: ocz / nl },
-        surface: "dirt",
+        surface: "gravel",
       };
     }
     const b = ocx * dir.x + ocy * dir.y + ocz * dir.z;
@@ -1123,7 +1477,7 @@ function rayRocks(origin, dir, maxDist) {
       distance: t,
       point: { x: px, y: py, z: pz },
       normal: { x: nx / nl, y: ny / nl, z: nz / nl },
-      surface: "dirt",
+      surface: "gravel",
     };
   }
   return best;
@@ -1290,11 +1644,14 @@ function trackWidth() {
 }
 
 function reset(opts = {}) {
-  const y = rideHeight();
+  const z = opts.z ?? CONFIG.spawn.z;
+  const x = opts.x ?? CONFIG.spawn.x;
+  ensureRoad(z);
+  const y = rideHeight() + groundHeight(x, z);
   state.position = {
-    x: opts.x ?? CONFIG.spawn.x,
+    x,
     y: (opts.y ?? y) + (opts.drop ?? 0),
-    z: opts.z ?? CONFIG.spawn.z,
+    z,
   };
   const yaw = opts.yaw ?? 0;
   state.quat = quatFromAxisAngle({ x: 0, y: 1, z: 0 }, yaw);
@@ -1908,7 +2265,8 @@ function noteImpact(point, normal, speed) {
 }
 
 function pushOutOfRail(p, box) {
-  if (p.y < -0.15 || p.y > box.h + 0.35) return null;
+  const base = box.y || 0;
+  if (p.y < base - 0.25 || p.y > base + box.h + 0.4) return null;
   const x1 = box.x + box.w;
   const z1 = box.z + box.d;
   if (p.x < box.x || p.x > x1 || p.z < box.z || p.z > z1) return null;
@@ -1932,7 +2290,7 @@ function resolveBarriers() {
   for (let iter = 0; iter < 3; iter++) {
     let pushed = false;
     for (const p of points()) {
-      for (const rail of CONFIG.track.guardrails) {
+      for (const rail of railsNear(p.z)) {
         const hit = pushOutOfRail(p, rail);
         if (!hit || hit.pen <= 0) continue;
         const vn = state.velocity.x * hit.n.x + state.velocity.z * hit.n.z;
@@ -1945,7 +2303,7 @@ function resolveBarriers() {
         if (hit.pen > 0.02 && -vn > 1.6) noteImpact(p, hit.n, -vn);
         pushed = true;
       }
-      for (const rock of CONFIG.track.rocks) {
+      for (const rock of rocksNear(p.z)) {
         const d = { x: p.x - rock.x, y: p.y - rock.cy, z: p.z - rock.z };
         const dist = vecLen(d);
         const pen = rock.r + 0.08 - dist;
@@ -1979,7 +2337,7 @@ function stepTravel(dt) {
   const speed = Math.hypot(state.velocity.x, state.velocity.z);
   const rpm = (state.engineOmega * 60) / TAU;
   const pedal = pedals();
-  if (state.engineOn && state.fuel > 0) {
+  if (!scripted && state.engineOn && state.fuel > 0) {
     const burn = (0.0032 + pedal.throttle * 0.011 + (rpm / 7000) * 0.0045) * dt;
     state.fuel = Math.max(0, state.fuel - burn);
     if (state.fuel <= 0) state.engineOn = false;
@@ -1987,7 +2345,7 @@ function stepTravel(dt) {
   let slip = 0;
   for (const w of wheels) slip += Math.abs(w.slipRatio);
   slip /= wheels.length;
-  const heat = (pedal.throttle * 0.012 + Math.max(0, slip - 0.55) * 0.02) * dt;
+  const heat = scripted ? 0 : (pedal.throttle * 0.012 + Math.max(0, slip - 0.55) * 0.02) * dt;
   const cool = 0.016 * dt * (state.coolant > 0.36 ? 1 : 0.35);
   state.coolant = clamp(state.coolant + heat - cool, 0.16, 1);
   const draw = (0.0012 + state.lights * 0.0055 + ((state.wipers || state.rain) ? 0.0025 : 0)) * dt;
@@ -2003,6 +2361,7 @@ function stepTravel(dt) {
 
 function stepPhysics(dt) {
   if (state.blewUp) return;
+  ensureRoad(state.position.z);
   state.force.x = state.force.y = state.force.z = 0;
   state.torque.x = state.torque.y = state.torque.z = 0;
   readInput();
@@ -2310,7 +2669,7 @@ scene.add(sun.target);
 const fill = new THREE.DirectionalLight(0xc5d7e6, 0.38);
 scene.add(fill);
 
-const SURFACE_ID = { asphalt: 0, wet: 1, dirt: 2, grass: 3, sand: 4, ice: 5, snow: 6, mud: 7, drift: 6, pack: 6 };
+const SURFACE_ID = { asphalt: 0, wet: 1, dirt: 2, grass: 3, sand: 4, ice: 5, snow: 6, mud: 7, drift: 6, pack: 6, gravel: 2 };
 
 function makeSurfaceAtlas() {
   const S = 128;
@@ -2636,148 +2995,17 @@ function buildSky() {
 }
 
 function buildTrack() {
-  const mesh = CONFIG.track.mesh;
-  const res = mesh.res;
-  const cols = Math.round((mesh.maxX - mesh.minX) / res) + 1;
-  const rows = Math.round((mesh.maxZ - mesh.minZ) / res) + 1;
-  const positions = new Float32Array(cols * rows * 3);
-  const normals = new Float32Array(cols * rows * 3);
-  const colors = new Float32Array(cols * rows * 3);
-  const surfIds = new Float32Array(cols * rows);
-  const color = new THREE.Color();
-  let k = 0;
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      const x = mesh.minX + i * res;
-      const z = mesh.minZ + j * res;
-      let y = terrainHeight(x, z);
-      if (insideSoft(x, z)) y -= 1.6;
-      positions[k] = x;
-      positions[k + 1] = y;
-      positions[k + 2] = z;
-      const n = groundNormal(x, z);
-      normals[k] = n.x;
-      normals[k + 1] = n.y;
-      normals[k + 2] = n.z;
-      const surf = surfaceAt(x, z);
-      surfIds[k / 3] = SURFACE_ID[surf] ?? 3;
-      color.set(CONFIG.surfaces[surf].color);
-      if (surf === "grass") {
-        const tuft = 0.5 + 0.5 * Math.sin(x * 1.7) * Math.sin(z * 1.45);
-        const patch = 0.5 + 0.5 * Math.sin(x * 0.33 + z * 0.21);
-        color.lerp(new THREE.Color(patch > 0.62 ? "#2c6428" : "#67a84a"), 0.28 + 0.22 * tuft);
-      } else if (surf === "dirt") {
-        const clod = 0.5 + 0.5 * Math.sin(x * 2.2 + 0.4) * Math.sin(z * 1.8);
-        color.lerp(new THREE.Color("#5c3a1e"), 0.35 * clod);
-        color.multiplyScalar(0.86 + 0.28 * clod);
-      } else if (surf === "sand") {
-        const rip = 0.5 + 0.5 * Math.sin(x * 2.8 + z * 0.55);
-        color.lerp(new THREE.Color("#e4c98a"), 0.22 * rip);
-        color.multiplyScalar(0.9 + 0.16 * rip);
-      } else if (surf === "wet") {
-        color.multiplyScalar(0.86 + 0.08 * Math.sin(x * 0.8 + z));
-      } else {
-        color.multiplyScalar(0.92 + 0.08 * Math.sin(x * 0.31) * Math.sin(z * 0.23));
-      }
-      if (surf === "asphalt") {
-        const dash = Math.abs(x) < 0.42 && (Math.floor(z / 4) % 2) === 0;
-        const edge = Math.abs(Math.abs(x) - 8.4) < 0.38;
-        if (dash || edge) color.lerp(new THREE.Color("#f7f7f7"), 0.88);
-      }
-      colors[k] = color.r;
-      colors[k + 1] = color.g;
-      colors[k + 2] = color.b;
-      k += 3;
-    }
-  }
-  const index = [];
-  for (let j = 0; j < rows - 1; j++) {
-    for (let i = 0; i < cols - 1; i++) {
-      const a = j * cols + i;
-      const b = a + 1;
-      const c = a + cols;
-      const d = c + 1;
-      index.push(a, c, b, b, c, d);
-    }
-  }
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geom.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
-  geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geom.setAttribute("surfaceId", new THREE.BufferAttribute(surfIds, 1));
-  geom.setIndex(index);
-  const ground = new THREE.Mesh(geom, groundMaterial(makeSurfaceAtlas()));
-  ground.receiveShadow = true;
-  scene.add(ground);
-  scene.add(buildWater());
-
   const base = new THREE.Mesh(
-    new THREE.PlaneGeometry(2000, 2000),
-    new THREE.MeshStandardMaterial({ color: CONFIG.surfaces.grass.color, roughness: 1, flatShading: true }),
+    new THREE.PlaneGeometry(4000, 4000),
+    new THREE.MeshStandardMaterial({ color: 0x3c7a36, roughness: 1, flatShading: true }),
   );
   base.rotation.x = -Math.PI / 2;
-  base.position.y = -0.08;
+  base.position.y = -2.2;
   base.receiveShadow = true;
   scene.add(base);
-
-  for (const zone of CONFIG.track.zones) {
-    if (!zone.mark) continue;
-    const posts = [
-      [zone.x, zone.z],
-      [zone.x + zone.w, zone.z],
-      [zone.x, zone.z + zone.d],
-      [zone.x + zone.w, zone.z + zone.d],
-    ];
-    for (const [x, z] of posts) {
-      const post = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 0.9, 8),
-        new THREE.MeshStandardMaterial({ color: CONFIG.surfaces[zone.surface].color, roughness: 0.7 }),
-      );
-      post.position.set(x, groundHeight(x, z) + 0.45, z);
-      post.castShadow = true;
-      scene.add(post);
-    }
-  }
-
-  // Posts sit behind the spawn camera so the crossbar never cuts the view.
-  const gateMat = new THREE.MeshStandardMaterial({ color: 0xd3541a, roughness: 0.55 });
-  const gateZ = -46;
-  for (const x of [-11, 11]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.6, 0.28), gateMat);
-    post.position.set(x, 0.8, gateZ);
-    post.castShadow = true;
-    scene.add(post);
-  }
-  const bar = new THREE.Mesh(
-    new THREE.BoxGeometry(22.4, 0.16, 0.16),
-    new THREE.MeshStandardMaterial({ color: 0x1b1e22, roughness: 0.4, metalness: 0.3 }),
-  );
-  bar.position.set(0, 1.55, gateZ);
-  scene.add(bar);
-
-  for (const label of CONFIG.track.labels) {
-    const c = document.createElement("canvas");
-    c.width = 256;
-    c.height = 64;
-    const g = c.getContext("2d");
-    g.fillStyle = "rgba(0,0,0,0.55)";
-    g.fillRect(0, 0, 256, 64);
-    g.fillStyle = label.color;
-    g.font = "700 36px sans-serif";
-    g.textAlign = "center";
-    g.textBaseline = "middle";
-    g.fillText(label.text, 128, 34);
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
-    sprite.position.set(label.x, groundHeight(label.x, label.z) + 2.4, label.z);
-    sprite.scale.set(5.4, 1.35, 1);
-    scene.add(sprite);
-  }
-  buildLines();
-  buildForest();
-  buildRocks();
-  buildRails();
   buildSky();
-  buildSoftChunks();
+  ensureRoad(0);
+  ensureRoad(-40);
 }
 
 function makeTread() {
@@ -3630,7 +3858,8 @@ function bindInput() {
   toggle("wipers", () => { state.wipers = !state.wipers; });
   toggle("rainbtn", () => { state.rain = !state.rain; });
   toggle("rocks", () => {
-    reset({ x: 48, z: 174, speed: 1.2, yaw: 0 });
+    const spot = roadSpot("rocks");
+    reset({ x: spot.x, z: spot.z, speed: 1.2, yaw: spot.yaw });
   });
   toggle("camhold", () => {
     orbit.hold = !orbit.hold;
@@ -3818,9 +4047,28 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "voyage-5432d",
+    build: "voyage-5432e",
     orbitState: () => ({ yaw: orbit.yaw, pitch: orbit.pitch, dist: orbit.dist, hold: orbit.hold, dragging: orbit.dragging }),
     clearRuts,
+    roadSpot,
+    roadHeading,
+    roadX,
+    sceneCount: () => scene.children.length,
+    countObjects() {
+      let n = 0;
+      scene.traverse(() => { n++; });
+      return n;
+    },
+    rutDepthAt(x, z) {
+      let m = 0;
+      for (const c of softChunks) {
+        if (!c.disp || x < c.x || z < c.z || x > c.x + c.w || z > c.z + c.d) continue;
+        const i = clamp(Math.round((x - c.x) / c.res), 0, c.cols - 1);
+        const j = clamp(Math.round((z - c.z) / c.res), 0, c.rows - 1);
+        m = Math.min(m, c.disp[j * c.cols + i]);
+      }
+      return -m;
+    },
     setOrbit(v = {}) {
       if (v.yaw != null) orbit.yaw = v.yaw;
       if (v.pitch != null) orbit.pitch = v.pitch;

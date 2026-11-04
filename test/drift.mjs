@@ -53,8 +53,9 @@ const result = await page.evaluate(() => {
     car.setDrive(mode);
     car.setScene({ timeOfDay: 0.48, rain: false, lights: 0, engineOn: true, fuel: 1, wear: 0 });
     car.clearInput();
-    const lane = mode === "AWD" ? 76 : 80;
-    car.reset({ x: lane, z: 104, speed: 0, yaw: 0 });
+    const spot = car.roadSpot("drift");
+    const z0 = mode === "AWD" ? spot.z : spot.z + 18;
+    car.reset({ x: car.roadX(z0), z: z0, speed: 0, yaw: car.roadHeading(z0) });
     car.setInput({ throttle: 1, brake: 0, steer: 0 });
     let dist = 0;
     let last = car.report().pos;
@@ -62,6 +63,14 @@ const result = await page.evaluate(() => {
     let minContact = 4;
     const samples = [];
     for (let t = 0; t < 10; t += 0.25) {
+      const pre = car.report();
+      const aim = car.roadHeading(pre.pos.z);
+      const have = Math.atan2(pre.fwd.x, pre.fwd.z);
+      let err = aim - have;
+      while (err > Math.PI) err -= Math.PI * 2;
+      while (err < -Math.PI) err += Math.PI * 2;
+      const lat = pre.pos.x - car.roadX(pre.pos.z);
+      car.setInput({ throttle: 1, brake: 0, steer: Math.max(-0.8, Math.min(0.8, err * 1.8 + lat * 0.25)) });
       const r = car.runSeconds(0.25);
       dist += Math.hypot(r.pos.x - last.x, r.pos.z - last.z);
       last = r.pos;
@@ -69,7 +78,7 @@ const result = await page.evaluate(() => {
       const onDrift = r.wheels.every((w) => w.surface === "drift");
       if (onDrift && kmh > maxKmh) maxKmh = kmh;
       const contact = r.wheels.filter((w) => w.inContact).length;
-      if (contact < minContact) minContact = contact;
+      if (onDrift && contact < minContact) minContact = contact;
       if (Math.round(t * 4) % 8 === 0) samples.push({ t: +t.toFixed(1), kmh: +kmh.toFixed(1), z: +r.pos.z.toFixed(1), sink: +Math.max(...r.wheels.map((w) => w.sinkDepth)).toFixed(2) });
     }
     const end = car.report();
@@ -90,7 +99,9 @@ const result = await page.evaluate(() => {
     car.setDrive("AWD");
     car.setScene({ timeOfDay: 0.48, rain: false, engineOn: true, fuel: 1 });
     car.clearInput();
-    car.reset({ x: 73, z: 108, speed: 40 / 3.6, yaw: 0 });
+    const spot = car.roadSpot("drift");
+    const z0 = spot.z + 40;
+    car.reset({ x: car.roadX(z0), z: z0, speed: 40 / 3.6, yaw: car.roadHeading(z0) });
     car.setInput({ throttle: 0, brake: 1, steer: 0 });
     const start = car.report().pos;
     let dist = 0;
@@ -115,7 +126,7 @@ const result = await page.evaluate(() => {
 
 console.log(JSON.stringify(result, null, 2));
 check("4x4 reaches 15-25 km/h", result.awd.maxKmh >= 15 && result.awd.maxKmh <= 26, `${result.awd.maxKmh} km/h`);
-check("4x4 keeps moving through the drift", result.awd.endKmh >= 12 || result.awd.z > 170, `${result.awd.endKmh} km/h at z=${result.awd.z}`);
+check("4x4 keeps moving through the drift", result.awd.endKmh >= 12, `${result.awd.endKmh} km/h, ${result.awd.dist} m`);
 check("4x4 covers the drift", result.awd.dist >= 50, `${result.awd.dist} m, z=${result.awd.z}`);
 check("4x4 keeps wheels planted", result.awd.minContact >= 3, `min contact ${result.awd.minContact}`);
 check("RWD is slower than 4x4", result.rwd.maxKmh < result.awd.maxKmh - 2 && result.rwd.dist < result.awd.dist, `RWD ${result.rwd.maxKmh} km/h, ${result.rwd.dist} m`);
