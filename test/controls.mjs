@@ -111,7 +111,7 @@ try {
   await new Promise((r) => setTimeout(r, 450));
   metrics = await page.evaluate(() => window.__CAR__.viewMetrics());
   assertAspect(metrics, 926, 428, "landscape");
-  check("build marker", (await page.evaluate(() => window.__CAR__.build)) === "voyage-5432c", await page.evaluate(() => window.__CAR__.build));
+  check("build marker", (await page.evaluate(() => window.__CAR__.build)) === "voyage-5432d", await page.evaluate(() => window.__CAR__.build));
 
   await straight();
   fs.mkdirSync("/opt/cursor/artifacts", { recursive: true });
