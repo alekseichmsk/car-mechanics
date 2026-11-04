@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="iphone12pm-4">
+<meta name="car-build" content="iphone12pm-5">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -471,9 +471,9 @@ const CONFIG = {
     wet: { mu: 0.68, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
     dirt: { mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
     grass: { mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
-    sand: { mu: 0.55, rolling: 0.035, sink: 0.01, restSink: 0.018, maxSink: 0.06, dig: 0.045, recover: 0.55, gripLoss: 0.4, rutDrag: 2.4, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
-    snow: { mu: 0.3, rolling: 0.02, sink: 0.008, restSink: 0.05, maxSink: 0.15, dig: 0.09, recover: 0.9, gripLoss: 0.58, rutDrag: 1.15, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
-    mud: { mu: 0.4, rolling: 0.04, sink: 0.012, restSink: 0.038, maxSink: 0.1, dig: 0.06, recover: 0.55, gripLoss: 0.5, rutDrag: 2.1, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
+    sand: { mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.32, recover: 0.3, gripLoss: 0.5, hDrag: 0.04, spinDamp: 650, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
+    snow: { mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.7, recover: 0.42, gripLoss: 0.72, hDrag: 0.065, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
+    mud: { mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 0.5, recover: 0.32, gripLoss: 0.65, hDrag: 0.08, spinDamp: 1400, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
     ice: { mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
   },
   track: {
@@ -1229,8 +1229,7 @@ function solveTires(dt) {
     const surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
-    const sunk = spec.maxSink ? clamp(w.sinkDepth / spec.maxSink, 0, 1) : 0;
-    const gripScale = 1 - (spec.gripLoss || 0) * sunk;
+    const gripScale = 1 - (spec.gripLoss || 0) * clamp(w.sinkDepth, 0, 1);
     const peak = surf.mu * gripScale * w.fz * load;
     let fx = magic(w.slipRatio, surf.lng) * peak;
     let fy = -magic(w.slipAngle, surf.lat) * peak;
@@ -1247,19 +1246,16 @@ function solveTires(dt) {
 }
 
 function updateSink(dt) {
+  // sinkDepth is 0..1 on each wheel. Slip digs a loose surface in; low slip or
+  // being airborne lets it fill back. High slip outruns that recovery, so
+  // flooring it stays buried and easing off climbs out.
   for (const w of wheels) {
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
-    if (!spec.maxSink) {
-      w.sinkDepth += (0 - w.sinkDepth) * Math.min(1, 1.5 * dt);
-      continue;
-    }
     const slip = Math.abs(w.slipRatio);
-    const digging = w.inContact && slip > 0.32 && input.throttle > 0.55;
-    const rolling = w.inContact && Math.abs(w.vLong) > 0.6 && slip < 0.22;
-    if (digging) w.sinkDepth += spec.dig * Math.min(slip, 2.2) * dt;
-    else if (rolling) w.sinkDepth += (spec.restSink - w.sinkDepth) * Math.min(1, spec.recover * dt);
-    else if (w.inContact) w.sinkDepth += (spec.restSink - w.sinkDepth) * Math.min(1, 0.35 * dt);
-    w.sinkDepth = clamp(w.sinkDepth, 0, spec.maxSink);
+    if (spec.loose && w.inContact) w.sinkDepth += slip * spec.slipGain * dt;
+    if (!w.inContact || slip < 0.55) w.sinkDepth -= (spec.recover || 0.45) * dt;
+    if (!spec.loose) w.sinkDepth -= 1.2 * dt;
+    w.sinkDepth = clamp(w.sinkDepth, 0, 1);
   }
 }
 
@@ -1270,16 +1266,16 @@ function applyContactForces() {
     applyForce(w.contact, mul(w.forward, w.fx));
     applyForce(w.contact, mul(w.right, w.fy));
     const surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
+    const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
     const vel = velocityAt(w.centerWorld);
-    const tangent = sub(vel, mul(w.normal, dot(vel, w.normal)));
-    const hs = vecLen(tangent);
-    if (hs > 0.04 && w.fz > 0) {
-      // Constant rolling plus sinkage that grows with speed (loose surfaces), not a stuck-in-the-mud constant.
-      const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
+    // Horizontal only. A vertical component here fights the suspension and jitters.
+    const hs = Math.hypot(vel.x, vel.z);
+    if (hs > 0.05 && w.fz > 0) {
       const roll = surf.rolling * w.fz * Math.min(1, hs / 1.4);
-      const sink = surf.sink * w.fz * hs;
-      const rut = (spec.rutDrag || 0) * w.sinkDepth * w.fz;
-      applyForce(w.contact, mul(tangent, -(roll + sink + rut) / hs));
+      const speedDrag = (surf.sink || 0) * w.fz * hs;
+      const rut = (spec.hDrag || 0) * w.sinkDepth * w.fz * hs;
+      const mag = roll + speedDrag + rut;
+      applyForce(w.contact, { x: -vel.x / hs * mag, y: 0, z: -vel.z / hs * mag });
     }
   }
   const v = state.velocity;
@@ -1321,6 +1317,13 @@ function integrateWheels(dt) {
     if (brake > 0 && Math.abs(wUn) <= maxDelta) w.omega = 0;
     else if (brake > 0) w.omega = wUn - Math.sign(wUn) * maxDelta;
     else w.omega = wUn;
+    const sunk = CONFIG.surfaces[w.surface];
+    if (sunk && sunk.spinDamp && w.sinkDepth > 0.8 && Math.abs(w.slipRatio) > 0.45) {
+      const depth = (w.sinkDepth - 0.8) / 0.2;
+      const dragT = sunk.spinDamp * depth;
+      const wSign = Math.sign(w.omega || T || 1);
+      w.omega -= wSign * Math.min(Math.abs(w.omega), (dragT * dt) / I);
+    }
     w.omega = clamp(w.omega, -700, 700);
     w.spinAngle += w.omega * dt;
   }
@@ -1468,7 +1471,7 @@ function dropRut(w) {
   const side = w.spec.x < 0 ? -0.08 : 0.08;
   m.position.set(w.contact.x + w.right.x * side, w.contact.y + 0.025, w.contact.z + w.right.z * side);
   m.rotation.set(0, Math.atan2(w.forward.x, w.forward.z), 0);
-  const deep = clamp(w.sinkDepth / 0.12, 0.35, 1);
+  const deep = clamp(0.4 + w.sinkDepth * 0.6, 0.4, 1);
   m.scale.set(0.7 + deep * 0.5, 1, 0.85);
   if (w.surface === "snow") m.material.color.setHex(0x9eb0be);
   else if (w.surface === "sand") m.material.color.setHex(0x8c7040);
@@ -1503,7 +1506,7 @@ function updateEffects(dt) {
       w.skidAcc = 0;
     }
     const rutty = w.surface === "snow" || w.surface === "sand" || w.surface === "mud";
-    if (rutty && w.sinkDepth > 0.02) {
+    if (rutty && w.sinkDepth > 0.12) {
       w.rutAcc += Math.max(Math.hypot(w.vLong, w.vLat), spinning ? 1.4 : 0) * dt;
       if (w.rutAcc >= 0.22) {
         w.rutAcc = 0;
@@ -1512,7 +1515,7 @@ function updateEffects(dt) {
     } else {
       w.rutAcc = 0;
     }
-    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning) || (rutty && spinning);
+    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning) || (rutty && spinning && w.sinkDepth > 0.12);
     if (sprayOn && state.tick % 2 === 0) {
       const spray = w.surface === "sand" ? { r: 0.86, g: 0.72, b: 0.4 }
         : w.surface === "dirt" ? { r: 0.55, g: 0.36, b: 0.18 }
@@ -1522,10 +1525,11 @@ function updateEffects(dt) {
         : w.surface === "ice" ? { r: 0.9, g: 0.95, b: 1 }
         : { r: 0.62, g: 0.62, b: 0.62 };
       const j = hash01(state.tick * 0.17 + w.spec.x * 3 + w.spec.z);
+      const atContact = rutty && w.sinkDepth > 0.12;
       emitSpeck(
-        w.contact.x + w.right.x * 0.4,
-        w.contact.y + 0.25,
-        w.contact.z + w.right.z * 0.4,
+        w.contact.x + (atContact ? 0 : w.right.x * 0.4),
+        w.contact.y + (atContact ? 0.08 : 0.25),
+        w.contact.z + (atContact ? 0 : w.right.z * 0.4),
         -w.forward.x * 0.8 + (j - 0.5) * 1.4,
         1.1 + j * 1.3,
         -w.forward.z * 0.8 + (hash01(j + 2) - 0.5) * 1.4,
@@ -2100,7 +2104,7 @@ function updateVisuals(frameDt) {
 
   for (const w of wheels) {
     const squash = Math.min((w.tireSquash || 0) * 2.2, w.spec.radius * 0.18);
-    const sink = w.sinkDepth || 0;
+    const sink = (w.sinkDepth || 0) * w.spec.radius * 0.3;
     const y = w.spec.y - w.suspensionLength - sink - squash;
     w.visual.steer.position.set(w.spec.x, y, w.spec.z);
     w.visual.steer.rotation.set(0, w.steerAngle, 0);
@@ -2483,7 +2487,7 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "iphone12pm-4",
+    build: "iphone12pm-5",
     wheelAngle: () => steerUi.angle,
     lookAtWheel(id) {
       const w = wheels.find((wheel) => wheel.spec.id === id) || wheels[0];
