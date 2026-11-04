@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="voyage-5432b">
+<meta name="car-build" content="voyage-5432c">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -172,6 +172,24 @@
     opacity: 0.85;
   }
   #rainfx.on { display: block; }
+  #extra {
+    position: fixed;
+    z-index: 4;
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    top: 148px;
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+  }
+  #extra button {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #extra svg { width: 22px; height: 22px; }
   @keyframes streaks { from { background-position: 0 0; } to { background-position: -30px 90px; } }
   #forces svg, #reset svg { width: 18px; height: 18px; }
   #wheels {
@@ -334,6 +352,8 @@
     #wear { font-size: 11px; }
     #side { top: 74px; gap: 4px; }
     #side button { width: 38px; height: 38px; }
+    #extra { top: 132px; }
+    #extra button { width: 36px; height: 36px; }
     .tbar { width: 44px; }
   }
   @media (orientation: portrait) {
@@ -397,6 +417,10 @@
   <div id="wear">АСФАЛЬТ • ИЗНОС +0</div>
   <div id="wheels"></div>
   <div id="legend"></div>
+</div>
+<div id="extra">
+  <button type="button" id="rocks" aria-label="Камни"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l5-8 3 4 2-3 6 7z"/><path d="M8 8l1.2-2L12 8"/></svg></button>
+  <button type="button" id="camhold" aria-label="Камера"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 14-5"/><path d="M20 12a8 8 0 0 1-14 5"/></svg></button>
 </div>
 <div id="side">
   <button type="button" id="eng" aria-label="Двигатель"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9"/><path d="M7 6a8 8 0 1 0 10 0"/></svg></button>
@@ -581,6 +605,7 @@ const CONFIG = {
     mesh: { minX: -40, maxX: 100, minZ: -52, maxZ: 214, res: 3 },
     // First matching rectangle wins. The pieces join into one driveable loop.
     zones: [
+      { surface: "dirt", x: 20, z: 176, w: 66, d: 34 },
       { surface: "drift", x: 66, z: 100, w: 22, d: 74 },
       { surface: "pack", x: 66, z: 40, w: 22, d: 60 },
       { surface: "ice", x: -38, z: -48, w: 16, d: 200 },
@@ -611,6 +636,7 @@ const CONFIG = {
       { text: "АСФАЛЬТ", x: 16, z: 8, color: "#f4f7fa" },
       { text: "БРОД", x: 16, z: 36, color: "#9fd8ea" },
       { text: "ГРУНТ", x: 40, z: 158, color: "#f0c49a" },
+      { text: "КАМНИ", x: 48, z: 174, color: "#f0e2c8" },
       { text: "СУГРОБ", x: 90, z: 130, color: "#f4fbff" },
       { text: "НАСТ", x: 90, z: 70, color: "#d5e0e8" },
       { text: "ПЕСОК", x: 36, z: 8, color: "#f0ddb0" },
@@ -621,8 +647,39 @@ const CONFIG = {
   skid: { slip: 0.32, spacing: 0.18, pool: 260 },
   particles: { life: 0.55, pool: 160 },
   debug: { forceScale: 0.00055 },
-  camera: { fov: 46, distance: 7.6, height: 2.15, side: 3.5, lookHeight: 0.55, stiffness: 4.2 },
+  camera: { fov: 46, distance: 7.6, height: 2.15, side: 3.5, lookHeight: 0.55, stiffness: 4.2, pitch: 0.3, orbitDist: 8.6, minDist: 3.4, maxDist: 18, minPitch: 0.08, maxPitch: 1.15, returnDelay: 3.2 },
 };
+
+// Climbable rock garden north of the dirt road. Buried spheres: exposed height is cy + r.
+(function addCrawlRocks() {
+  let seed = 91;
+  const rnd = () => {
+    seed = (seed * 48271) % 2147483647;
+    return seed / 2147483647;
+  };
+  const placed = [];
+  const push = (rock) => {
+    for (const o of placed) {
+      if (Math.hypot(o.x - rock.x, o.z - rock.z) < (o.r + rock.r) * 0.62) return;
+    }
+    placed.push(rock);
+    CONFIG.track.rocks.push(rock);
+  };
+  for (let i = 0; i < 7; i++) {
+    const z = 188 + rnd() * 18;
+    const x = i % 2 === 0 ? 24 + rnd() * 5 : 74 + rnd() * 6;
+    const h = 0.9 + rnd() * 0.35;
+    const r = 0.72 + rnd() * 0.28;
+    push({ x, z, r, cy: h - r, crawl: true });
+  }
+  for (let i = 0; i < 46; i++) {
+    const z = 183 + rnd() * 24;
+    const x = 30 + rnd() * 42;
+    const h = 0.08 + rnd() * rnd() * 0.4;
+    const r = Math.max(0.15, h * 0.8 + 0.08 + rnd() * 0.12);
+    push({ x, z, r, cy: h - r, crawl: true });
+  }
+})();
 
 // ---------------------------------------------------------------------------
 // Math. Plain objects so the step can be ported without Three.js.
@@ -1856,17 +1913,23 @@ function resolveBarriers() {
         const pen = rock.r + 0.08 - dist;
         if (pen <= 0.03 || dist < 1e-4) continue;
         const n = mul(d, 1 / dist);
-        if (n.y > 0.65) continue;
         const vn = state.velocity.x * n.x + state.velocity.y * n.y + state.velocity.z * n.z;
-        state.position.x += n.x * pen;
-        state.position.y += n.y * pen * 0.35;
-        state.position.z += n.z * pen;
-        if (vn < 0) {
-          state.velocity.x -= n.x * vn;
-          state.velocity.y -= n.y * vn * 0.35;
-          state.velocity.z -= n.z * vn;
+        if (n.y > 0.62) {
+          // Crown of a rock under the belly: lift straight up so the car can drive off.
+          const lift = Math.min(pen, 0.07);
+          state.position.y += lift;
+          if (state.velocity.y < 0) state.velocity.y *= 0.15;
+        } else {
+          state.position.x += n.x * pen;
+          state.position.y += Math.max(0, n.y) * pen * 0.45;
+          state.position.z += n.z * pen;
+          if (vn < 0) {
+            state.velocity.x -= n.x * vn;
+            state.velocity.y -= n.y * vn * 0.35;
+            state.velocity.z -= n.z * vn;
+          }
+          if (pen > 0.06 && -vn > 2) noteImpact(p, n, -vn);
         }
-        if (pen > 0.06 && -vn > 2) noteImpact(p, n, -vn);
         pushed = true;
       }
     }
@@ -2454,13 +2517,21 @@ function buildForest() {
 
 function buildRocks() {
   const geo = new THREE.DodecahedronGeometry(1, 0);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x8d8478, flatShading: true, roughness: 0.92 });
+  const pebble = new THREE.DodecahedronGeometry(1, 0);
   for (const rock of CONFIG.track.rocks) {
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.scale.set(rock.r, rock.r * 0.82, rock.r);
-    mesh.position.set(rock.x, rock.cy + rock.r * 0.15, rock.z);
-    mesh.rotation.y = rock.x * 0.3;
-    mesh.castShadow = true;
+    const h = rock.cy + rock.r;
+    const shade = 0.42 + (Math.abs(Math.sin(rock.x * 12.1 + rock.z)) * 0.38);
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(shade, shade * 0.93, shade * 0.84),
+      flatShading: true,
+      roughness: 0.94,
+    });
+    const mesh = new THREE.Mesh(h < 0.22 ? pebble : geo, mat);
+    const squash = rock.crawl ? 0.78 : 0.82;
+    mesh.scale.set(rock.r, rock.r * squash, rock.r * (0.9 + (rock.x % 0.2)));
+    mesh.position.set(rock.x, rock.cy, rock.z);
+    mesh.rotation.set(rock.z * 0.2, rock.x * 0.4, rock.z * 0.15);
+    mesh.castShadow = h > 0.35;
     mesh.receiveShadow = true;
     scene.add(mesh);
   }
@@ -2987,15 +3058,57 @@ function setArrow(arrow, origin, vector) {
   arrow.setLength(Math.max(L, 0.2), Math.max(L * 0.22, 0.08), Math.max(L * 0.12, 0.05));
 }
 
+const orbit = {
+  yaw: 0,
+  pitch: CONFIG.camera.pitch,
+  dist: CONFIG.camera.orbitDist,
+  hold: false,
+  idle: 10,
+  dragging: false,
+  pointers: new Map(),
+  lastX: 0,
+  lastY: 0,
+  pinch: 0,
+};
+
+function settleOrbit() {
+  orbit.yaw = 0;
+  orbit.pitch = CONFIG.camera.pitch;
+  orbit.dist = CONFIG.camera.orbitDist;
+  orbit.idle = 10;
+  orbit.dragging = false;
+  orbit.pointers.clear();
+  orbit.pinch = 0;
+}
+
+function easeOrbit(frameDt) {
+  if (orbit.dragging || orbit.hold) return;
+  orbit.idle += frameDt;
+  if (orbit.idle < CONFIG.camera.returnDelay) return;
+  const k = 1 - Math.exp(-2.4 * frameDt);
+  let dyaw = -orbit.yaw;
+  while (dyaw > Math.PI) dyaw -= TAU;
+  while (dyaw < -Math.PI) dyaw += TAU;
+  orbit.yaw += dyaw * k;
+  orbit.pitch += (CONFIG.camera.pitch - orbit.pitch) * k;
+  orbit.dist += (CONFIG.camera.orbitDist - orbit.dist) * k;
+}
+
 function cameraDesired() {
-  const back = rotateVec(state.quat, { x: 0, y: 0, z: -1 });
-  const up = rotateVec(state.quat, { x: 0, y: 1, z: 0 });
-  const right = rotateVec(state.quat, { x: 1, y: 0, z: 0 });
-  const c = CONFIG.camera;
-  return add(add(add(state.position, mul(back, c.distance)), mul(up, c.height)), mul(right, c.side));
+  const face = Math.atan2(rotateVec(state.quat, { x: 0, y: 0, z: 1 }).x, rotateVec(state.quat, { x: 0, y: 0, z: 1 }).z) + orbit.yaw;
+  const pitch = clamp(orbit.pitch, CONFIG.camera.minPitch, CONFIG.camera.maxPitch);
+  const dist = clamp(orbit.dist, CONFIG.camera.minDist, CONFIG.camera.maxDist);
+  const horiz = dist * Math.cos(pitch);
+  const x = state.position.x - Math.sin(face) * horiz;
+  const z = state.position.z - Math.cos(face) * horiz;
+  let y = state.position.y + dist * Math.sin(pitch);
+  const floorY = groundHeight(x, z) + 0.45;
+  if (y < floorY) y = floorY;
+  return { x, y, z };
 }
 
 function snapCamera() {
+  settleOrbit();
   const d = cameraDesired();
   camPos.set(d.x, d.y, d.z);
   camera.position.copy(camPos);
@@ -3005,7 +3118,7 @@ function snapCamera() {
     state.position.y + up.y * CONFIG.camera.lookHeight,
     state.position.z + up.z * CONFIG.camera.lookHeight,
   );
-  camera.up.set(up.x, up.y, up.z);
+  camera.up.set(0, 1, 0);
   camera.lookAt(look);
   camReady = true;
 }
@@ -3219,18 +3332,17 @@ function updateVisuals(frameDt) {
   points.geometry.attributes.position.needsUpdate = true;
   points.geometry.attributes.color.needsUpdate = true;
 
+  easeOrbit(frameDt);
   const desired = cameraDesired();
   if (!camReady) snapCamera();
-  const k = 1 - Math.exp(-CONFIG.camera.stiffness * Math.max(frameDt, 1 / 120));
+  const stiff = orbit.dragging ? 16 : CONFIG.camera.stiffness;
+  const k = 1 - Math.exp(-stiff * Math.max(frameDt, 1 / 120));
   camPos.lerp(new THREE.Vector3(desired.x, desired.y, desired.z), k);
+  const floorY = groundHeight(camPos.x, camPos.z) + 0.4;
+  if (camPos.y < floorY) camPos.y = floorY;
   camera.position.copy(camPos);
-  const up = rotateVec(state.quat, { x: 0, y: 1, z: 0 });
-  look.set(
-    state.position.x + up.x * CONFIG.camera.lookHeight,
-    state.position.y + up.y * CONFIG.camera.lookHeight,
-    state.position.z + up.z * CONFIG.camera.lookHeight,
-  );
-  camera.up.set(up.x, up.y, up.z);
+  look.set(state.position.x, state.position.y + CONFIG.camera.lookHeight, state.position.z);
+  camera.up.set(0, 1, 0);
   camera.lookAt(look);
 
   sun.position.set(state.position.x + 14, state.position.y + 22, state.position.z + 8);
@@ -3342,6 +3454,8 @@ function updateHud() {
   if (lights) lights.classList.toggle("on", state.lights > 0);
   if (wipers) wipers.classList.toggle("on", state.wipers);
   if (rainBtn) rainBtn.classList.toggle("on", state.rain);
+  const camBtn = document.getElementById("camhold");
+  if (camBtn) camBtn.classList.toggle("on", orbit.hold);
 }
 
 function setDrive(mode) {
@@ -3477,6 +3591,62 @@ function bindInput() {
   toggle("lights", () => { state.lights = (state.lights + 1) % 3; });
   toggle("wipers", () => { state.wipers = !state.wipers; });
   toggle("rainbtn", () => { state.rain = !state.rain; });
+  toggle("rocks", () => {
+    reset({ x: 48, z: 174, speed: 1.2, yaw: 0 });
+  });
+  toggle("camhold", () => {
+    orbit.hold = !orbit.hold;
+    if (!orbit.hold) orbit.idle = CONFIG.camera.returnDelay;
+  });
+  const canvasEl = document.getElementById("view");
+  const orbitBlocked = (target) => !!(target && target.closest && target.closest("button, #wheel, #side, #extra, #modes"));
+  window.addEventListener("pointerdown", (e) => {
+    if (orbitBlocked(e.target)) return;
+    orbit.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    orbit.dragging = true;
+    orbit.idle = 0;
+    orbit.lastX = e.clientX;
+    orbit.lastY = e.clientY;
+    if (orbit.pointers.size < 2) orbit.pinch = 0;
+    try { canvasEl.setPointerCapture(e.pointerId); } catch (err) { /* synthetic */ }
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (!orbit.pointers.has(e.pointerId)) return;
+    orbit.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    orbit.idle = 0;
+    const pts = [...orbit.pointers.values()];
+    if (pts.length >= 2) {
+      const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (orbit.pinch > 8) orbit.dist = clamp(orbit.dist * (orbit.pinch / d), CONFIG.camera.minDist, CONFIG.camera.maxDist);
+      orbit.pinch = d;
+      return;
+    }
+    const dx = e.clientX - orbit.lastX;
+    const dy = e.clientY - orbit.lastY;
+    orbit.lastX = e.clientX;
+    orbit.lastY = e.clientY;
+    orbit.yaw -= dx * 0.0065;
+    orbit.pitch = clamp(orbit.pitch - dy * 0.005, CONFIG.camera.minPitch, CONFIG.camera.maxPitch);
+  });
+  const orbitEnd = (e) => {
+    orbit.pointers.delete(e.pointerId);
+    if (orbit.pointers.size === 0) {
+      orbit.dragging = false;
+      orbit.pinch = 0;
+    } else if (orbit.pointers.size === 1) {
+      const only = [...orbit.pointers.values()][0];
+      orbit.lastX = only.x;
+      orbit.lastY = only.y;
+      orbit.pinch = 0;
+    }
+  };
+  window.addEventListener("pointerup", orbitEnd);
+  window.addEventListener("pointercancel", orbitEnd);
+  canvasEl.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    orbit.dist = clamp(orbit.dist * (e.deltaY > 0 ? 1.08 : 0.92), CONFIG.camera.minDist, CONFIG.camera.maxDist);
+    orbit.idle = 0;
+  }, { passive: false });
 }
 
 function scheduleFit() {
@@ -3610,7 +3780,22 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "voyage-5432b",
+    build: "voyage-5432c",
+    orbitState: () => ({ yaw: orbit.yaw, pitch: orbit.pitch, dist: orbit.dist, hold: orbit.hold, dragging: orbit.dragging }),
+    setOrbit(v = {}) {
+      if (v.yaw != null) orbit.yaw = v.yaw;
+      if (v.pitch != null) orbit.pitch = v.pitch;
+      if (v.dist != null) orbit.dist = v.dist;
+      if (v.hold != null) orbit.hold = !!v.hold;
+      orbit.idle = 0;
+      const d = cameraDesired();
+      camPos.set(d.x, d.y, d.z);
+      camera.position.copy(camPos);
+      look.set(state.position.x, state.position.y + CONFIG.camera.lookHeight, state.position.z);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(look);
+      renderer.render(scene, camera);
+    },
     setScene(v = {}) {
       if (v.timeOfDay != null) state.timeOfDay = v.timeOfDay;
       if (v.rain != null) state.rain = !!v.rain;

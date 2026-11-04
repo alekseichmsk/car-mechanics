@@ -111,7 +111,7 @@ try {
   await new Promise((r) => setTimeout(r, 450));
   metrics = await page.evaluate(() => window.__CAR__.viewMetrics());
   assertAspect(metrics, 926, 428, "landscape");
-  check("build marker", (await page.evaluate(() => window.__CAR__.build)) === "voyage-5432b", await page.evaluate(() => window.__CAR__.build));
+  check("build marker", (await page.evaluate(() => window.__CAR__.build)) === "voyage-5432c", await page.evaluate(() => window.__CAR__.build));
 
   await straight();
   fs.mkdirSync("/opt/cursor/artifacts", { recursive: true });
@@ -236,6 +236,42 @@ try {
   });
   check("brake pedal is brake", brakeRun.controls.brake > 0.9 && brakeRun.controls.throttle === 0, JSON.stringify(brakeRun.controls));
   check("brake slows the car", brakeRun.after < brakeRun.before - 2 && brakeRun.gear > 0, `speed ${brakeRun.before.toFixed(2)} -> ${brakeRun.after.toFixed(2)} gear ${brakeRun.gear}`);
+
+  await release();
+  const orbit = await page.evaluate(() => {
+    window.__CAR__.reset({ x: 0, z: -32, speed: 6 });
+    const before = window.__CAR__.orbitState();
+    const canvas = document.getElementById("view");
+    const r = canvas.getBoundingClientRect();
+    const x = r.left + r.width * 0.5;
+    const y = r.top + r.height * 0.42;
+    const ev = (type, cx, cy) => canvas.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, pointerId: 7, pointerType: "mouse", button: 0, clientX: cx, clientY: cy,
+    }));
+    ev("pointerdown", x, y);
+    ev("pointermove", x + 90, y - 30);
+    const mid = window.__CAR__.orbitState();
+    const controls = window.__CAR__.controls();
+    ev("pointerup", x + 90, y - 30);
+    const wheel = document.getElementById("wheel");
+    const wr = wheel.getBoundingClientRect();
+    wheel.dispatchEvent(new PointerEvent("pointerdown", {
+      bubbles: true, pointerId: 8, pointerType: "touch", button: 0,
+      clientX: wr.left + wr.width / 2, clientY: wr.top + 16,
+    }));
+    wheel.dispatchEvent(new PointerEvent("pointermove", {
+      bubbles: true, pointerId: 8, pointerType: "touch",
+      clientX: wr.left + wr.width - 8, clientY: wr.top + wr.height / 2,
+    }));
+    const steered = window.__CAR__.controls();
+    wheel.dispatchEvent(new PointerEvent("pointerup", {
+      bubbles: true, pointerId: 8, pointerType: "touch", clientX: wr.left + wr.width - 8, clientY: wr.top + wr.height / 2,
+    }));
+    return { before: before.yaw, mid: mid.yaw, pitch: mid.pitch, steer: controls.steer, wheelSteer: steered.steer };
+  });
+  check("empty-screen drag orbits the camera", Math.abs(orbit.mid - orbit.before) > 0.08, `yaw ${orbit.before.toFixed(3)} -> ${orbit.mid.toFixed(3)}`);
+  check("orbit drag does not steer", Math.abs(orbit.steer) < 0.05, `steer ${orbit.steer.toFixed(3)}`);
+  check("wheel drag still steers", orbit.wheelSteer > 0.2, `steer ${orbit.wheelSteer.toFixed(3)}`);
 
   await page.setViewport({ width: 428, height: 926, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   await page.evaluate(() => window.dispatchEvent(new Event("orientationchange")));
