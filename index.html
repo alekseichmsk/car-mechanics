@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="voyage-5432">
+<meta name="car-build" content="voyage-5432b">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -554,9 +554,11 @@ const CONFIG = {
     wet: { ru: "МОКРЫЙ", mu: 0.68, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
     dirt: { ru: "ГРУНТОВКА", mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
     grass: { ru: "ТРАВА", mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
-    sand: { ru: "ПЕСОК", mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.32, recover: 0.3, gripLoss: 0.5, hDrag: 0.04, spinDamp: 650, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
-    snow: { ru: "СНЕГ", mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.85, digAbove: 1.0, recoverBelow: 1.35, recover: 0.4, gripLoss: 0.72, hDrag: 0.055, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
-    mud: { ru: "ГРЯЗЬ", mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 0.5, recover: 0.32, gripLoss: 0.65, hDrag: 0.08, spinDamp: 1400, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
+    sand: { ru: "ПЕСОК", mu: 0.55, rolling: 0.035, sink: 0.008, loose: true, slipGain: 0.4, digAbove: 0.28, recoverBelow: 0.7, recover: 0.28, gripLoss: 0.4, hDrag: 0.05, spinDamp: 650, deform: true, sinkMax: 0.09, bull: 4200, bullSlip: 0.8, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
+    snow: { ru: "СНЕГ", mu: 0.34, rolling: 0.02, sink: 0.006, loose: true, slipGain: 2.2, digAbove: 0.18, recoverBelow: 0.85, recover: 0.16, gripLoss: 0.22, hDrag: 0.08, spinDamp: 1400, deform: true, sinkMax: 0.3, restSink: 0.34, bull: 9800, bullSlip: 1.35, lng: { B: 5.4, C: 1.2, E: 0.96 }, lat: { B: 4.2, C: 1.16, E: 0.96 }, color: "#e7eef3" },
+    drift: { ru: "СУГРОБ", mu: 0.34, rolling: 0.02, sink: 0.006, loose: true, slipGain: 2.2, digAbove: 0.18, recoverBelow: 0.85, recover: 0.16, gripLoss: 0.22, hDrag: 0.08, spinDamp: 1400, deform: true, sinkMax: 0.32, restSink: 0.34, bull: 9800, bullSlip: 1.35, lng: { B: 5.4, C: 1.2, E: 0.96 }, lat: { B: 4.2, C: 1.16, E: 0.96 }, color: "#f4f7fb" },
+    pack: { ru: "НАСТ", mu: 0.2, rolling: 0.012, sink: 0.001, loose: true, slipGain: 0.15, digAbove: 0.8, recoverBelow: 0.5, recover: 0.8, gripLoss: 0.05, hDrag: 0.01, deform: true, sinkMax: 0.02, bull: 0, lng: { B: 6.2, C: 1.35, E: 0.97 }, lat: { B: 4.6, C: 1.3, E: 0.97 }, color: "#d5e0e8" },
+    mud: { ru: "ГРЯЗЬ", mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 1.15, digAbove: 0.22, recoverBelow: 0.75, recover: 0.22, gripLoss: 0.4, hDrag: 0.09, spinDamp: 1400, deform: true, sinkMax: 0.16, restSink: 0.22, bull: 7600, bullSlip: 1.15, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
     ice: { ru: "ЛЁД", mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
     water: { ru: "ВОДА", mu: 0.62, rolling: 0.02, sink: 0, lng: { B: 7.2, C: 1.3, E: 0.97 }, lat: { B: 5.4, C: 1.26, E: 0.97 }, color: "#1c6e86" },
   },
@@ -579,7 +581,9 @@ const CONFIG = {
     mesh: { minX: -40, maxX: 100, minZ: -52, maxZ: 214, res: 3 },
     // First matching rectangle wins. The pieces join into one driveable loop.
     zones: [
-      { surface: "snow", x: 66, z: 40, w: 22, d: 132 },
+      { surface: "drift", x: 66, z: 100, w: 22, d: 74 },
+      { surface: "pack", x: 66, z: 40, w: 22, d: 60 },
+      { surface: "ice", x: -38, z: -48, w: 16, d: 200 },
       { surface: "dirt", x: 14, z: 154, w: 74, d: 26 },
       { surface: "sand", x: 14, z: -16, w: 52, d: 56 },
       { surface: "mud", x: 14, z: -44, w: 52, d: 28 },
@@ -607,7 +611,8 @@ const CONFIG = {
       { text: "АСФАЛЬТ", x: 16, z: 8, color: "#f4f7fa" },
       { text: "БРОД", x: 16, z: 36, color: "#9fd8ea" },
       { text: "ГРУНТ", x: 40, z: 158, color: "#f0c49a" },
-      { text: "СНЕГ", x: 78, z: 90, color: "#f4fbff" },
+      { text: "СУГРОБ", x: 90, z: 130, color: "#f4fbff" },
+      { text: "НАСТ", x: 90, z: 70, color: "#d5e0e8" },
       { text: "ПЕСОК", x: 36, z: 8, color: "#f0ddb0" },
       { text: "ГРЯЗЬ", x: 36, z: -30, color: "#d7c4a4" },
       { text: "ЛЁД", x: 78, z: 8, color: "#e7f4fb" },
@@ -821,10 +826,181 @@ function waterDepth(x, z) {
   return f.depth * Math.sin(Math.PI * v) * side;
 }
 
-function groundHeight(x, z) {
+function terrainHeight(x, z) {
   let h = 0;
   for (const f of CONFIG.track.features) h += featureHeight(x, z, f);
   return h;
+}
+
+const softChunks = [];
+
+function seedSoft(kind, x, z) {
+  if (kind === "drift") {
+    let h = 0.035 * Math.sin(x * 0.65) * Math.sin(z * 0.42);
+    const mounds = [[68.5, 118, 0.72, 3.4], [85, 136, 0.85, 3.8], [69, 156, 0.62, 3.1], [84.5, 112, 0.48, 2.6]];
+    for (const [mx, mz, amp, rad] of mounds) {
+      const dx = x - mx;
+      const dz = z - mz;
+      h += amp * Math.exp(-(dx * dx + dz * dz) / (rad * rad));
+    }
+    return h;
+  }
+  if (kind === "pack") return 0.012 * Math.sin(x * 0.8 + z * 0.35);
+  if (kind === "sand") {
+    return 0.48 * Math.sin(x * 0.23 + 0.6) * Math.sin(z * 0.19 + 1.1) + 0.055 * Math.sin(x * 1.8 + z * 0.7);
+  }
+  if (kind === "mud") {
+    const wave = 0.06 * Math.sin(x * 0.8) * Math.sin(z * 0.62 + 0.4);
+    const bowl = Math.min(0, 0.05 * Math.sin(x * 0.5 + 1.7) * Math.sin(z * 0.46) - 0.015);
+    return wave + bowl;
+  }
+  return 0;
+}
+
+function edgeFade(c, x, z) {
+  const u = Math.min(x - c.x, c.x + c.w - x);
+  const v = Math.min(z - c.z, c.z + c.d - z);
+  return clamp(Math.min(u, v) / 1.4, 0, 1);
+}
+
+function buildSoftChunks() {
+  const specs = [
+    { kind: "drift", x: 66, z: 100, w: 22, d: 74, res: 0.72, color: 0xf3f6f8 },
+    { kind: "pack", x: 66, z: 40, w: 22, d: 60, res: 0.9, color: 0xd5dee6 },
+    { kind: "sand", x: 14, z: -16, w: 52, d: 56, res: 0.85, color: 0xc6a15a },
+    { kind: "mud", x: 14, z: -44, w: 52, d: 28, res: 0.8, color: 0x4a3424 },
+  ];
+  for (const spec of specs) {
+    const cols = Math.floor(spec.w / spec.res) + 1;
+    const rows = Math.floor(spec.d / spec.res) + 1;
+    const base = new Float32Array(cols * rows);
+    const disp = new Float32Array(cols * rows);
+    const positions = new Float32Array(cols * rows * 3);
+    const colors = new Float32Array(cols * rows * 3);
+    const col = new THREE.Color(spec.color);
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        const x = spec.x + i * spec.res;
+        const z = spec.z + j * spec.res;
+        const seeded = seedSoft(spec.kind, x, z) * edgeFade(spec, x, z);
+        base[j * cols + i] = seeded;
+        const y = terrainHeight(x, z) + seeded;
+        const p = (j * cols + i) * 3;
+        positions[p] = x;
+        positions[p + 1] = y + 0.012;
+        positions[p + 2] = z;
+        const tint = spec.kind === "drift" || spec.kind === "pack" ? (hash01(i * 13.1 + j * 7.7) > 0.9 ? 1.15 : 0.94 + hash01(i + j * 3) * 0.08) : 0.86 + hash01(i * 5 + j) * 0.22;
+        const wet = spec.kind === "mud" && seeded < -0.01 ? 0.55 : 1;
+        colors[p] = col.r * tint * wet;
+        colors[p + 1] = col.g * tint * wet;
+        colors[p + 2] = col.b * tint * (spec.kind === "mud" && seeded < -0.01 ? 0.7 : 1);
+      }
+    }
+    const index = [];
+    for (let j = 0; j < rows - 1; j++) {
+      for (let i = 0; i < cols - 1; i++) {
+        const a = j * cols + i;
+        index.push(a, a + cols, a + 1, a + 1, a + cols, a + cols + 1);
+      }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geom.setIndex(index);
+    geom.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: spec.kind === "mud" ? 0.72 : 0.94, metalness: spec.kind === "mud" ? 0.08 : 0 });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    const chunk = { ...spec, cols, rows, base, disp, positions, geom, mesh, dirty: false };
+    chunk.sample = (x, z) => {
+      const u = (x - chunk.x) / chunk.res;
+      const v = (z - chunk.z) / chunk.res;
+      const i = clamp(Math.floor(u), 0, chunk.cols - 2);
+      const j = clamp(Math.floor(v), 0, chunk.rows - 2);
+      const tx = clamp(u - i, 0, 1);
+      const tz = clamp(v - j, 0, 1);
+      const at = (ii, jj) => {
+        const k = jj * chunk.cols + ii;
+        return chunk.base[k] + chunk.disp[k];
+      };
+      const h = at(i, j) * (1 - tx) * (1 - tz) + at(i + 1, j) * tx * (1 - tz) + at(i, j + 1) * (1 - tx) * tz + at(i + 1, j + 1) * tx * tz;
+      return h;
+    };
+    softChunks.push(chunk);
+  }
+  const puddleMat = new THREE.MeshStandardMaterial({
+    color: 0x1c2a28, roughness: 0.06, metalness: 0.35, transparent: true, opacity: 0.82, flatShading: true,
+  });
+  for (const [x, z, r] of [[28, -32, 1.3], [40, -24, 0.9], [52, -36, 1.1], [22, -22, 0.7]]) {
+    const puddle = new THREE.Mesh(new THREE.CircleGeometry(r, 6), puddleMat);
+    puddle.rotation.x = -Math.PI / 2;
+    puddle.position.set(x, groundHeight(x, z) + 0.03, z);
+    puddle.receiveShadow = true;
+    scene.add(puddle);
+  }
+}
+
+const SOFT_RECTS = [
+  { x: 66, z: 100, w: 22, d: 74 },
+  { x: 66, z: 40, w: 22, d: 60 },
+  { x: 14, z: -16, w: 52, d: 56 },
+  { x: 14, z: -44, w: 52, d: 28 },
+];
+function insideSoft(x, z) {
+  for (const r of SOFT_RECTS) {
+    if (x >= r.x && x <= r.x + r.w && z >= r.z && z <= r.z + r.d) return true;
+  }
+  return false;
+}
+
+function softSample(x, z) {
+  for (const c of softChunks) {
+    if (x < c.x || z < c.z || x > c.x + c.w || z > c.z + c.d) continue;
+    return c.sample(x, z);
+  }
+  return 0;
+}
+
+function carveSoft(x, z, depth) {
+  if (depth < 0.008) return;
+  for (const c of softChunks) {
+    if (x < c.x || z < c.z || x > c.x + c.w || z > c.z + c.d) continue;
+    const rad = 0.55;
+    const i0 = Math.max(0, Math.floor((x - rad - c.x) / c.res));
+    const i1 = Math.min(c.cols - 1, Math.ceil((x + rad - c.x) / c.res));
+    const j0 = Math.max(0, Math.floor((z - rad - c.z) / c.res));
+    const j1 = Math.min(c.rows - 1, Math.ceil((z + rad - c.z) / c.res));
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const px = c.x + i * c.res;
+        const pz = c.z + j * c.res;
+        const d = Math.hypot(px - x, pz - z);
+        if (d > rad) continue;
+        const k = j * c.cols + i;
+        const bite = -depth * (1 - d / rad) * edgeFade(c, px, pz);
+        if (bite < c.disp[k]) {
+          c.disp[k] = bite;
+          const p = k * 3;
+          c.positions[p + 1] = terrainHeight(px, pz) + c.base[k] + c.disp[k] + 0.012;
+          c.dirty = true;
+        }
+      }
+    }
+  }
+}
+
+function flushSoft() {
+  for (const c of softChunks) {
+    if (!c.dirty) continue;
+    c.geom.attributes.position.needsUpdate = true;
+    c.geom.computeVertexNormals();
+    c.dirty = false;
+  }
+}
+
+function groundHeight(x, z) {
+  return terrainHeight(x, z) + softSample(x, z);
 }
 
 function groundNormal(x, z) {
@@ -1185,7 +1361,7 @@ function updateReverse(dt) {
 
 function castSuspension() {
   const down = normalize(rotateVec(state.quat, { x: 0, y: -1, z: 0 }));
-  const rayLen = CONFIG.suspension.restLength + CONFIG.wheels[0].radius + 0.08;
+  const rayLen = CONFIG.suspension.restLength + CONFIG.wheels[0].radius + 0.48;
   for (const w of wheels) {
     const origin = localToWorld({ x: w.spec.x, y: w.spec.y, z: w.spec.z });
     const hit = raycast(origin, down, rayLen);
@@ -1444,16 +1620,23 @@ function solveTires(dt) {
 }
 
 function updateSink(dt) {
-  // sinkDepth is 0..1 on each wheel. Slip digs a loose surface in; low slip or
-  // being airborne lets it fill back. High slip outruns that recovery, so
-  // flooring it stays buried and easing off climbs out.
+  // sinkDepth is 0..1. Wheelspin digs, and so does a locked slide: a braked
+  // tire plows snow instead of skating on top of it.
   for (const w of wheels) {
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
     const slip = Math.abs(w.slipRatio);
+    const slide = Math.hypot(w.slipRatio, (w.slipAngle || 0) * 1.15);
+    const locked = w.inContact && Math.abs(w.omega) < 2.4 && Math.abs(w.vLong) > 0.6;
+    const digSignal = Math.max(slip, slide, locked ? 1.2 : 0);
     const digAbove = spec.digAbove ?? 0.45;
-    const recoverBelow = spec.recoverBelow ?? 0.9;
-    if (spec.loose && w.inContact) w.sinkDepth += Math.max(0, slip - digAbove) * spec.slipGain * dt;
-    if (!w.inContact || slip < recoverBelow) w.sinkDepth -= (spec.recover || 0.45) * dt;
+    if (spec.loose && w.inContact) {
+      w.sinkDepth += Math.max(0, digSignal - digAbove) * (spec.slipGain || 0.4) * dt;
+      if (spec.restSink && w.sinkDepth < spec.restSink) {
+        w.sinkDepth += (spec.restSink - w.sinkDepth) * Math.min(1, dt * 2.4);
+      }
+    }
+    const digging = spec.loose && w.inContact && digSignal > (spec.digAbove ?? 0.45);
+    if (!w.inContact || !digging) w.sinkDepth -= (spec.recover || 0.45) * dt;
     if (!spec.loose) w.sinkDepth -= 1.2 * dt;
     w.sinkDepth = clamp(w.sinkDepth, 0, 1);
   }
@@ -1474,12 +1657,22 @@ function applyContactForces() {
       const roll = surf.rolling * w.fz * Math.min(1, hs / 1.4);
       const speedDrag = (surf.sink || 0) * w.fz * hs;
       const rut = (spec.hDrag || 0) * w.sinkDepth * w.fz * hs;
+      const bullK = spec.bull || 0;
+      let bull = 0;
+      if (bullK > 0) {
+        const slip = Math.hypot(Math.abs(w.slipRatio), Math.abs(w.slipAngle || 0));
+        const locked = Math.abs(w.omega) < 2.4 && hs > 0.6;
+        const sinkUse = Math.max(w.sinkDepth, spec.restSink || 0);
+        const boost = 1 + Math.min(slip, 1.6) * (spec.bullSlip || 1) + (locked ? 0.9 : 0);
+        const fSpeed = 0.4 + hs / (hs + 0.65);
+        bull = bullK * sinkUse * w.spec.width * fSpeed * boost;
+      }
       let hydro = 0;
       if (w.water > CONFIG.water.hub) {
         const submerged = w.water - CONFIG.water.hub * 0.35;
         hydro = CONFIG.water.drag * submerged * hs * hs;
       }
-      const mag = roll + speedDrag + rut + hydro;
+      const mag = roll + speedDrag + rut + hydro + bull;
       applyForce(w.contact, { x: -vel.x / hs * mag, y: 0, z: -vel.z / hs * mag });
     }
   }
@@ -1845,7 +2038,7 @@ function dropRut(w) {
   m.rotation.set(0, Math.atan2(w.forward.x, w.forward.z), 0);
   const deep = clamp(0.4 + w.sinkDepth * 0.6, 0.4, 1);
   m.scale.set(0.7 + deep * 0.5, 1, 0.85);
-  if (w.surface === "snow") m.material.color.setHex(0x9eb0be);
+  if (w.surface === "snow" || w.surface === "drift" || w.surface === "pack") m.material.color.setHex(0x9eb0be);
   else if (w.surface === "sand") m.material.color.setHex(0x8c7040);
   else m.material.color.setHex(0x2a1c12);
   m.material.opacity = 0.45 + deep * 0.4;
@@ -1877,7 +2070,12 @@ function updateEffects(dt) {
     } else {
       w.skidAcc = 0;
     }
-    const rutty = w.surface === "snow" || w.surface === "sand" || w.surface === "mud";
+    const rutty = w.surface === "snow" || w.surface === "drift" || w.surface === "pack" || w.surface === "sand" || w.surface === "mud";
+    if (rutty && w.inContact) {
+      const spec = CONFIG.surfaces[w.surface];
+      const depth = Math.max((w.sinkDepth || 0) * (spec.sinkMax || 0), spec.sinkMax ? 0.012 : 0);
+      carveSoft(w.contact.x, w.contact.z, depth);
+    }
     if (rutty && w.sinkDepth > 0.12) {
       w.rutAcc += Math.max(Math.hypot(w.vLong, w.vLat), spinning ? 1.4 : 0) * dt;
       if (w.rutAcc >= 0.22) {
@@ -1893,7 +2091,7 @@ function updateEffects(dt) {
       const spray = w.surface === "sand" ? { r: 0.86, g: 0.72, b: 0.4 }
         : w.surface === "dirt" ? { r: 0.55, g: 0.36, b: 0.18 }
         : w.surface === "grass" ? { r: 0.42, g: 0.62, b: 0.28 }
-        : w.surface === "snow" ? { r: 0.93, g: 0.96, b: 1 }
+        : (w.surface === "snow" || w.surface === "drift" || w.surface === "pack") ? { r: 0.93, g: 0.96, b: 1 }
         : w.surface === "mud" ? { r: 0.32, g: 0.22, b: 0.12 }
         : w.surface === "ice" ? { r: 0.9, g: 0.95, b: 1 }
         : (w.water || 0) > 0.03 ? { r: 0.72, g: 0.88, b: 0.95 }
@@ -1930,6 +2128,7 @@ function updateEffects(dt) {
   }
   stepParts(smokeParts, smokeMesh, dt, 1.4);
   stepParts(dirtParts, dirtMesh, dt, 0.6);
+  flushSoft();
   state.tick++;
 }
 
@@ -1985,6 +2184,11 @@ camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, 0.1, 400);
 fitRenderer();
 const camPos = new THREE.Vector3();
 const look = new THREE.Vector3();
+const _tireInv = new THREE.Matrix4();
+const _tireN = new THREE.Vector3();
+const _tireP = new THREE.Vector3();
+const _plowFrom = new THREE.Vector3(0, 1, 0);
+const _plowTo = new THREE.Vector3();
 let camReady = false;
 
 const hemi = new THREE.HemisphereLight(0xe7f1f7, 0x7d6e58, 0.9);
@@ -2005,7 +2209,7 @@ scene.add(sun.target);
 const fill = new THREE.DirectionalLight(0xc5d7e6, 0.38);
 scene.add(fill);
 
-const SURFACE_ID = { asphalt: 0, wet: 1, dirt: 2, grass: 3, sand: 4, ice: 5, snow: 6, mud: 7 };
+const SURFACE_ID = { asphalt: 0, wet: 1, dirt: 2, grass: 3, sand: 4, ice: 5, snow: 6, mud: 7, drift: 6, pack: 6 };
 
 function makeSurfaceAtlas() {
   const S = 128;
@@ -2129,7 +2333,7 @@ function groundMaterial(atlas) {
 
 function buildWater() {
   const f = CONFIG.water.ford;
-  const geo = new THREE.PlaneGeometry(f.w, f.d, 28, 36);
+  const geo = new THREE.PlaneGeometry(f.w, f.d, 14, 16);
   geo.rotateX(-Math.PI / 2);
   const mat = new THREE.ShaderMaterial({
     transparent: true,
@@ -2138,6 +2342,7 @@ function buildWater() {
       time: { value: 0 },
       ford: { value: new THREE.Vector4(f.x, f.z, f.w, f.d) },
       peak: { value: f.depth },
+      car: { value: new THREE.Vector2(0, 4) },
     },
     vertexShader: `
       uniform float time;
@@ -2151,9 +2356,9 @@ function buildWater() {
         float v = clamp((world0.z - ford.y) / ford.w, 0.0, 1.0);
         float side = smoothstep(0.0, 0.14, u) * smoothstep(1.0, 0.86, u);
         vDepth = peak * sin(3.14159 * v) * side;
-        float ripple = sin(world0.x * 1.7 + time * 1.5) * 0.012 + sin(world0.z * 2.3 - time * 1.2) * 0.01;
+        float wave = sin(world0.x * 0.85 + time * 1.25) * 0.11 + sin(world0.z * 1.05 - time * 0.95) * 0.08;
         vec3 p = position;
-        p.y += 0.03 + ripple * smoothstep(0.02, 0.12, vDepth);
+        p.y += 0.04 + wave * smoothstep(0.02, 0.16, vDepth);
         vec4 world = modelMatrix * vec4(p, 1.0);
         vPos = world.xyz;
         gl_Position = projectionMatrix * viewMatrix * world;
@@ -2161,17 +2366,23 @@ function buildWater() {
     `,
     fragmentShader: `
       uniform float time;
+      uniform vec2 car;
       varying vec3 vPos;
       varying float vDepth;
       void main() {
-        if (vDepth < 0.025) discard;
-        vec3 V = normalize(cameraPosition - vPos);
-        float fres = pow(1.0 - max(V.y, 0.0), 2.2);
+        if (vDepth < 0.02) discard;
+        vec3 n = normalize(cross(dFdx(vPos), dFdy(vPos)));
         float shade = clamp(vDepth / 0.55, 0.0, 1.0);
-        vec3 col = mix(vec3(0.45, 0.72, 0.78), vec3(0.05, 0.22, 0.32), shade);
-        float glint = pow(max(sin(vPos.x * 1.7 + time * 1.5) * sin(vPos.z * 2.3 - time * 1.2), 0.0), 2.0);
-        col += vec3(0.65, 0.82, 0.88) * (fres * 0.85 + glint * 0.25);
-        gl_FragColor = vec4(col, 0.38 + shade * 0.28 + fres * 0.22);
+        vec3 deep = vec3(0.03, 0.16, 0.26);
+        vec3 shallow = vec3(0.42, 0.72, 0.74);
+        vec3 col = mix(shallow, deep, shade);
+        col *= 0.55 + 0.45 * max(dot(n, normalize(vec3(0.35, 0.9, 0.2))), 0.0);
+        float edge = smoothstep(0.16, 0.0, vDepth);
+        float nearCar = smoothstep(4.2, 0.7, length(vPos.xz - car));
+        float foam = clamp(edge * 0.95 + nearCar * 0.75 * smoothstep(0.02, 0.2, vDepth), 0.0, 1.0);
+        col = mix(col, vec3(0.86, 0.93, 0.94), foam);
+        float alpha = 0.42 + shade * 0.34 + foam * 0.2;
+        gl_FragColor = vec4(col, alpha);
       }
     `,
   });
@@ -2330,7 +2541,8 @@ function buildTrack() {
     for (let i = 0; i < cols; i++) {
       const x = mesh.minX + i * res;
       const z = mesh.minZ + j * res;
-      const y = groundHeight(x, z);
+      let y = terrainHeight(x, z);
+      if (insideSoft(x, z)) y -= 1.6;
       positions[k] = x;
       positions[k + 1] = y;
       positions[k + 2] = z;
@@ -2456,6 +2668,7 @@ function buildTrack() {
   buildRocks();
   buildRails();
   buildSky();
+  buildSoftChunks();
 }
 
 function makeTread() {
@@ -2580,18 +2793,48 @@ function buildCar() {
   chassis.userData.steerWheel = wheelSpin;
 
   const tread = makeTread();
-  const tireMat = new THREE.MeshStandardMaterial({ map: tread, color: 0x222222, roughness: 0.9, flatShading: true });
   const ghostMat = new THREE.MeshStandardMaterial({
     map: tread, color: 0x222222, transparent: true, opacity: 0.0, depthWrite: false,
   });
+  function tireDeformMaterial() {
+    const mat = new THREE.MeshStandardMaterial({ map: tread, color: 0x222222, roughness: 0.9, flatShading: true });
+    mat.userData.defl = { value: 0 };
+    mat.userData.planeN = { value: new THREE.Vector3(0, 1, 0) };
+    mat.userData.planeD = { value: -10 };
+    mat.customProgramCacheKey = () => "tire-patch-1";
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uDefl = mat.userData.defl;
+      shader.uniforms.uPlaneN = mat.userData.planeN;
+      shader.uniforms.uPlaneD = mat.userData.planeD;
+      shader.vertexShader = shader.vertexShader
+        .replace("#include <common>", `#include <common>
+          uniform float uDefl;
+          uniform vec3 uPlaneN;
+          uniform float uPlaneD;`)
+        .replace("#include <begin_vertex>", `#include <begin_vertex>
+          if (uDefl > 0.0004) {
+            float h = dot(transformed, uPlaneN);
+            float gap = uPlaneD - h;
+            if (gap > 0.0) {
+              transformed += uPlaneN * gap;
+              vec3 axle = vec3(1.0, 0.0, 0.0);
+              vec3 radial = transformed - axle * dot(transformed, axle);
+              float rl = length(radial);
+              if (rl > 0.001) transformed += (radial / rl) * min(gap, uDefl) * 0.55;
+            }
+          }`);
+    };
+    return mat;
+  }
   const rimMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.38, metalness: 0.08, flatShading: true });
 
   for (const w of wheels) {
     const steer = new THREE.Group();
     const spin = new THREE.Group();
     steer.add(spin);
-    const tireGeo = new THREE.CylinderGeometry(w.spec.radius, w.spec.radius, w.spec.width, 10, 1);
+    const tireGeo = new THREE.CylinderGeometry(w.spec.radius, w.spec.radius, w.spec.width, 18, 1);
     tireGeo.rotateZ(Math.PI / 2);
+    const tireMat = tireDeformMaterial();
     const tire = new THREE.Mesh(tireGeo, tireMat);
     tire.castShadow = true;
     spin.add(tire);
@@ -2620,7 +2863,14 @@ function buildCar() {
       ghosts.push(g);
     }
     chassis.add(steer);
-    w.visual = { steer, spin, ghosts };
+    const plow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.22, 0.5, 5),
+      new THREE.MeshStandardMaterial({ color: 0xf4f7fb, flatShading: true, roughness: 0.9 }),
+    );
+    plow.castShadow = true;
+    plow.visible = false;
+    scene.add(plow);
+    w.visual = { steer, spin, ghosts, tire, plow };
   }
 
   const axleMat = new THREE.MeshStandardMaterial({ color: 0xd5dde4, roughness: 0.28, metalness: 0.82 });
@@ -2874,21 +3124,50 @@ function updateVisuals(frameDt) {
   chassis.position.set(state.position.x, state.position.y, state.position.z);
   chassis.quaternion.set(state.quat.x, state.quat.y, state.quat.z, state.quat.w);
 
-  if (scene.userData.water) scene.userData.water.uniforms.time.value += frameDt;
+  if (scene.userData.water) {
+    scene.userData.water.uniforms.time.value += frameDt;
+    scene.userData.water.uniforms.car.value.set(state.position.x, state.position.z);
+  }
   if (scripted && !steerUi.dragging) steerUi.angle = input.steer * CONFIG.steer.wheelLock;
   const wheelEl = document.getElementById("wheel-rotor");
   if (wheelEl) wheelEl.style.transform = `rotate(${steerUi.angle}rad)`;
   if (chassis.userData.steerWheel) chassis.userData.steerWheel.rotation.z = -steerUi.angle;
 
   for (const w of wheels) {
-    const squash = Math.min((w.tireSquash || 0) * 2.2, w.spec.radius * 0.18);
-    const sink = (w.sinkDepth || 0) * w.spec.radius * 0.3;
-    const y = w.spec.y - w.suspensionLength - sink - squash;
+    const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
+    const sink = spec.deform ? 0 : (w.sinkDepth || 0) * w.spec.radius * 0.3;
+    const y = w.spec.y - w.suspensionLength - sink;
     w.visual.steer.position.set(w.spec.x, y, w.spec.z);
     w.visual.steer.rotation.set(0, w.steerAngle, 0);
-    const sy = Math.max(0.72, (w.spec.radius - squash) / w.spec.radius);
-    w.visual.spin.scale.set(1, sy, 1);
+    w.visual.spin.scale.set(1, 1, 1);
     w.visual.spin.rotation.set(w.spinAngle, 0, w.latFlex || 0);
+    const defl = w.inContact ? Math.min(w.tireSquash || 0, 0.045) : 0;
+    const mat = w.visual.tire.material;
+    w.visual.tire.updateWorldMatrix(true, false);
+    if (defl > 0.0004 && w.contact) {
+      const inv = _tireInv.copy(w.visual.tire.matrixWorld).invert();
+      _tireN.set(w.normal.x, w.normal.y, w.normal.z).transformDirection(inv);
+      _tireP.set(w.contact.x, w.contact.y, w.contact.z).applyMatrix4(inv);
+      mat.userData.defl.value = defl;
+      mat.userData.planeN.value.copy(_tireN);
+      mat.userData.planeD.value = _tireN.dot(_tireP);
+    } else {
+      mat.userData.defl.value = 0;
+    }
+    const plow = w.visual.plow;
+    const plowing = spec.deform && (spec.bull || 0) > 0 && w.inContact && w.sinkDepth > 0.32;
+    plow.visible = plowing;
+    if (plowing) {
+      const reach = 0.28 + w.sinkDepth * 0.55;
+      plow.position.set(
+        w.contact.x + w.forward.x * reach,
+        w.contact.y + 0.08 + w.sinkDepth * 0.12,
+        w.contact.z + w.forward.z * reach,
+      );
+      plow.scale.set(0.7 + w.sinkDepth, 0.45 + w.sinkDepth * 1.3, 0.7 + w.sinkDepth);
+      plow.quaternion.setFromUnitVectors(_plowFrom, _plowTo.set(w.forward.x, 0.15, w.forward.z).normalize());
+      plow.material.color.set(w.surface === "mud" ? 0x3a2418 : w.surface === "sand" ? 0xc6a15a : 0xf4f7fb);
+    }
     const slipV = Math.abs(w.omega * w.spec.radius - w.vLong);
     const blur = clamp(Math.abs(w.omega) / 40, 0, 1);
     w.visual.ghosts.forEach((g, i) => {
@@ -3331,7 +3610,7 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "voyage-5432",
+    build: "voyage-5432b",
     setScene(v = {}) {
       if (v.timeOfDay != null) state.timeOfDay = v.timeOfDay;
       if (v.rain != null) state.rain = !!v.rain;
@@ -3347,6 +3626,31 @@ function boot() {
       updateHud();
       updateVisuals(0.016);
       renderer.render(scene, camera);
+    },
+    tireCam(id) {
+      const w = wheels.find((wheel) => wheel.spec.id === id) || wheels[0];
+      updateVisuals(0.016);
+      const p = w.contact || w.centerWorld;
+      camera.position.set(p.x + 0.95, p.y + 0.18, p.z + 0.22);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(p.x, p.y + 0.04, p.z);
+      renderer.render(scene, camera);
+    },
+    tirePatch(id) {
+      const w = wheels.find((wheel) => wheel.spec.id === id) || wheels[0];
+      updateVisuals(0.016);
+      const mat = w.visual.tire.material;
+      const pos = w.visual.tire.geometry.attributes.position;
+      const n = mat.userData.planeN.value;
+      const d = mat.userData.planeD.value;
+      let below = 0;
+      let minH = 99;
+      for (let i = 0; i < pos.count; i++) {
+        const h = pos.getX(i) * n.x + pos.getY(i) * n.y + pos.getZ(i) * n.z;
+        if (h < minH) minH = h;
+        if (h < d - 0.001) below++;
+      }
+      return { defl: mat.userData.defl.value, d, minH, below, squash: w.tireSquash };
     },
     look(dx, dy, dz) {
       camera.position.set(state.position.x + dx, state.position.y + dy, state.position.z + dz);
