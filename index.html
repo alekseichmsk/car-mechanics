@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="iphone12pm-6">
+<meta name="car-build" content="iphone12pm-7">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -41,7 +41,15 @@
     overscroll-behavior: none;
   }
   body { position: fixed; inset: 0; width: 100%; }
-  #view { display: block; width: 100%; height: 100%; touch-action: none; }
+  #view {
+    display: block;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
   #hud, #touch, #hint, #rotate { position: fixed; z-index: 2; }
   #hud {
     top: 0; left: 0; right: 0;
@@ -989,7 +997,11 @@ function updateSteer(dt) {
   }
   const speed = Math.hypot(state.velocity.x, state.velocity.z);
   const fade = lerp(1, CONFIG.steer.speedFade, clamp(speed / CONFIG.steer.fadeSpeed, 0, 1));
-  const target = input.steer * CONFIG.steer.maxAngle * fade;
+  // input.steer > 0 is a right turn: clockwise wheel, D / ArrowRight, right button.
+  // The chase camera looks along body +Z. In that view body -X is screen-right,
+  // so the yaw that turns the car right is the opposite of input.steer.
+  const command = -input.steer;
+  const target = command * CONFIG.steer.maxAngle * fade;
   const rate = input.steer === 0 ? CONFIG.steer.returnRate : CONFIG.steer.rate;
   const maxStep = rate * dt;
   state.steer += clamp(target - state.steer, -maxStep, maxStep);
@@ -1619,11 +1631,33 @@ const renderer = new THREE.WebGLRenderer({
   preserveDrawingBuffer: true,
   failIfMajorPerformanceCaveat: false,
 });
+let camera = null;
+function viewportPixels() {
+  const vv = window.visualViewport;
+  const w = vv && vv.width > 1 ? vv.width : window.innerWidth;
+  const h = vv && vv.height > 1 ? vv.height : window.innerHeight;
+  return {
+    w: Math.max(1, Math.round(w)),
+    h: Math.max(1, Math.round(h)),
+    left: vv ? vv.offsetLeft || 0 : 0,
+    top: vv ? vv.offsetTop || 0 : 0,
+  };
+}
 function fitRenderer() {
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
+  const box = viewportPixels();
+  const pr = Math.min(window.devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(pr);
+  renderer.setSize(box.w, box.h, false);
+  canvas.style.position = "fixed";
+  canvas.style.margin = "0";
+  canvas.style.left = box.left + "px";
+  canvas.style.top = box.top + "px";
+  canvas.style.width = box.w + "px";
+  canvas.style.height = box.h + "px";
+  if (camera) {
+    camera.aspect = box.w / box.h;
+    camera.updateProjectionMatrix();
+  }
 }
 fitRenderer();
 renderer.shadowMap.enabled = true;
@@ -1634,7 +1668,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa9c0ce);
 scene.fog = new THREE.Fog(0xa9c0ce, 45, 190);
 
-const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 400);
+camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, 0.1, 400);
+fitRenderer();
 const camPos = new THREE.Vector3();
 const look = new THREE.Vector3();
 let camReady = false;
@@ -2500,11 +2535,20 @@ function bindInput() {
   });
 }
 
-window.addEventListener("resize", () => {
+function scheduleFit() {
   fitRenderer();
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-});
+  clearTimeout(scheduleFit.soon);
+  clearTimeout(scheduleFit.later);
+  scheduleFit.soon = setTimeout(fitRenderer, 100);
+  scheduleFit.later = setTimeout(fitRenderer, 350);
+}
+window.addEventListener("resize", scheduleFit);
+window.addEventListener("orientationchange", scheduleFit);
+window.addEventListener("pageshow", scheduleFit);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", scheduleFit);
+  window.visualViewport.addEventListener("scroll", scheduleFit);
+}
 
 function plain(v) { return { x: v.x, y: v.y, z: v.z }; }
 
@@ -2622,7 +2666,63 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "iphone12pm-6",
+    build: "iphone12pm-7",
+    fitRenderer,
+    viewMetrics() {
+      const size = new THREE.Vector2();
+      renderer.getSize(size);
+      return {
+        cssW: canvas.clientWidth,
+        cssH: canvas.clientHeight,
+        styleW: parseFloat(canvas.style.width),
+        styleH: parseFloat(canvas.style.height),
+        rendererW: size.x,
+        rendererH: size.y,
+        bufW: canvas.width,
+        bufH: canvas.height,
+        pr: renderer.getPixelRatio(),
+        aspect: camera.aspect,
+        innerW: window.innerWidth,
+        innerH: window.innerHeight,
+        vvW: window.visualViewport ? window.visualViewport.width : null,
+        vvH: window.visualViewport ? window.visualViewport.height : null,
+      };
+    },
+    screenHeading() {
+      scene.updateMatrixWorld(true);
+      const fwd = rotateVec(state.quat, { x: 0, y: 0, z: 1 });
+      const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+      const noseRight = fwd.x * camRight.x + fwd.y * camRight.y + fwd.z * camRight.z;
+      const aim = (id) => {
+        const w = wheels.find((wheel) => wheel.spec.id === id);
+        const a = new THREE.Vector3(0, 0, 0);
+        const b = new THREE.Vector3(0, 0, 1);
+        w.visual.steer.updateWorldMatrix(true, true);
+        w.visual.steer.localToWorld(a);
+        w.visual.steer.localToWorld(b);
+        const pa = a.clone().project(camera);
+        const pb = b.clone().project(camera);
+        return { dx: pb.x - pa.x, steerAngle: w.steerAngle };
+      };
+      const rotor = document.getElementById("wheel-rotor");
+      const tf = getComputedStyle(rotor).transform;
+      let wheelClockwise = 0;
+      const matched = tf && tf.match(/matrix\(([^)]+)\)/);
+      if (matched) {
+        const p = matched[1].split(",").map(Number);
+        wheelClockwise = Math.atan2(p[1], p[0]);
+      }
+      return {
+        noseRight,
+        fwd: { x: fwd.x, y: fwd.y, z: fwd.z },
+        camRight: { x: camRight.x, y: camRight.y, z: camRight.z },
+        wheelClockwise,
+        fl: aim("FL"),
+        fr: aim("FR"),
+        steer: state.steer,
+        input: input.steer,
+      };
+    },
     waterDepth,
     wheelAngle: () => steerUi.angle,
     lookAtWheel(id) {
