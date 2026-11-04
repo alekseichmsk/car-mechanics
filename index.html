@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="voyage-5432g">
+<meta name="car-build" content="voyage-5432h">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -203,6 +203,22 @@
     pointer-events: auto;
   }
   #worldmenu.open { display: flex; }
+  #unstick {
+    display: none;
+    position: fixed;
+    z-index: 7;
+    left: 50%;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    transform: translateX(-50%);
+    min-width: 168px;
+    min-height: 46px;
+    border-radius: 12px;
+    background: #d3541a;
+    color: white;
+    pointer-events: auto;
+  }
+  #unstick.show { display: inline-flex; align-items: center; justify-content: center; }
+  #unstick::before { content: "ВЫТАЩИТЬ"; }
   #worldmenu .wx, #worldmenu .ts {
     display: flex;
     flex-wrap: wrap;
@@ -488,6 +504,7 @@
 <div id="rainfx"></div>
 <div id="snowfx"></div>
 <div id="hazefx"></div>
+<button type="button" id="unstick" aria-label="Вытащить"></button>
 <div id="worldmenu" class="panel">
   <div id="seedline"></div>
   <div id="bioline"></div>
@@ -1120,7 +1137,7 @@ function waterDepth(x, z) {
   const along = clamp((z - start) / ROAD.seg, 0, 1);
   const edge = smoothstep(0.08, 0.2, along) * smoothstep(0.92, 0.8, along);
   const side = 1 - (dx / 6.2) ** 2;
-  return Math.min(ROAD.maxWater, 0.36 * edge * Math.max(side, 0));
+  return Math.min(0.22, ROAD.maxWater, 0.22 * edge * Math.max(side, 0));
 }
 
 function detailHeight(x, z, dx) {
@@ -1427,7 +1444,13 @@ function makeRoadChunk(index) {
       const surf = surfaceAt(x, z);
       const spec = CONFIG.surfaces[surf] || CONFIG.surfaces.grass;
       color.set(spec.color);
-      if ((biomeAt(z) === "rain" || state.weatherMode === "rain") && (surf === "asphalt" || surf === "wet")) color.multiplyScalar(0.62);
+      if (surf === "grass") {
+        const track = Math.abs(x - roadX(z));
+        color.set(track < 2.6 ? 0x8a9344 : track < 5.5 ? 0x4f7a34 : 0x2c6a30);
+      }
+      const wetBed = waterDepth(x, z);
+      if (wetBed > 0.03) color.set(wetBed > 0.12 ? 0x3e5964 : 0x5d6e62);
+      if ((biomeAt(z) === "rain" || state.weatherMode === "rain") && (surf === "asphalt" || surf === "wet") && wetBed < 0.03) color.multiplyScalar(0.72);
       const edge = distToSegEdge(z);
       if (edge < 12) {
         const nz = z + (z >= 0 ? 8 : -8);
@@ -1459,6 +1482,12 @@ function makeRoadChunk(index) {
   mesh.receiveShadow = true;
   const group = new THREE.Group();
   group.add(mesh);
+  const skirtMat = new THREE.MeshStandardMaterial({ color: 0x2a3828, flatShading: true, roughness: 1 });
+  for (const side of [-1, 1]) {
+    const skirt = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.4, d + 0.4), skirtMat);
+    skirt.position.set(side > 0 ? x0 + w : x0, roadY(z0 + d * 0.5) - 1.5, z0 + d * 0.5);
+    group.add(skirt);
+  }
   const rocks = chunkRocks(z0, d);
   const rockGeo = rockGeometry();
   for (const rock of rocks) {
@@ -1486,14 +1515,14 @@ function makeRoadChunk(index) {
     const bed = terrainHeight(cx, z0 + d * 0.5) + waterDepth(cx, z0 + d * 0.5);
     const water = new THREE.Mesh(
       new THREE.PlaneGeometry(14, d * 0.92, 8, 6),
-      new THREE.MeshStandardMaterial({ color: 0x1c6e86, transparent: true, opacity: 0.72, roughness: 0.15, metalness: 0.15, flatShading: true }),
+      new THREE.MeshStandardMaterial({ color: 0x6f8d98, transparent: true, opacity: 0.9, roughness: 0.22, metalness: 0.04, flatShading: true }),
     );
     water.rotation.x = -Math.PI / 2;
     water.position.set(cx, bed + 0.05, z0 + d * 0.5);
     group.add(water);
   }
   if (kind === "mud" || ((biomeAt(z0 + d * 0.5) === "rain" || state.weatherMode === "rain") && (kind === "asphalt" || kind === "dirt"))) {
-    const puddleMat = new THREE.MeshStandardMaterial({ color: 0x243038, roughness: 0.08, metalness: 0.25, transparent: true, opacity: 0.72, flatShading: true });
+    const puddleMat = new THREE.MeshStandardMaterial({ color: 0x4a3424, roughness: 0.35, metalness: 0.02, transparent: true, opacity: 0.9, flatShading: true });
     for (let p = 0; p < 2; p++) {
       const z = z0 + 8 + p * 16;
       const cx = roadX(z) + (p === 0 ? -1.4 : 1.6);
@@ -1634,6 +1663,15 @@ function updateClimate() {
   state.dust = (state.weatherMode === "desert" || blend.biome === "desert" || (blend.next === "desert" && blend.t > 0.45)) && dry < 0.85;
   state.snowCover = snowing && dry < 0.2;
   state.rainGrip = raining && dry < 0.2;
+}
+
+function recoverCar() {
+  const z = state.position.z + 10;
+  const x = roadX(z);
+  reset({ x, z, speed: 3, yaw: roadHeading(z) });
+  state.stuckTime = 0;
+  const unstick = document.getElementById("unstick");
+  if (unstick) unstick.classList.remove("show");
 }
 
 function setWeather(mode) {
@@ -2479,7 +2517,8 @@ function applyContactForces() {
         const submerged = w.water - CONFIG.water.hub * 0.35;
         hydro = CONFIG.water.drag * submerged * hs * hs;
       }
-      const mag = roll + speedDrag + rut + hydro + bull;
+      let mag = roll + speedDrag + rut + hydro + bull;
+      if (input.throttle > 0.5 && input.brake < 0.15 && hs < 1.4) mag *= 0.22;
       applyForce(w.contact, { x: -vel.x / hs * mag, y: 0, z: -vel.z / hs * mag });
     }
   }
@@ -2712,6 +2751,11 @@ function stepTravel(dt) {
     state.wipers = false;
   }
   state.odo += (speed * dt) / 1000;
+  const trying = input.throttle > 0.55 && input.brake < 0.2 && !input.handbrake;
+  if (trying && speed < 0.55) state.stuckTime = (state.stuckTime || 0) + dt;
+  else state.stuckTime = Math.max(0, (state.stuckTime || 0) - dt * 2);
+  const unstick = document.getElementById("unstick");
+  if (unstick) unstick.classList.toggle("show", state.stuckTime > 5);
   const scale = state.timeScale || 1;
   state.timeOfDay = (state.timeOfDay + (dt * scale) / 180) % 1;
   if (!scripted && state.weatherMode === "auto") {
@@ -3381,7 +3425,7 @@ function buildSky() {
 function buildTrack() {
   const base = new THREE.Mesh(
     new THREE.PlaneGeometry(4000, 4000),
-    new THREE.MeshStandardMaterial({ color: 0x3c7a36, roughness: 1, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x243024, roughness: 1, flatShading: true }),
   );
   base.rotation.x = -Math.PI / 2;
   base.position.y = -2.2;
@@ -4297,6 +4341,7 @@ function bindInput() {
   toggle("lights", () => { state.lights = (state.lights + 1) % 3; });
   toggle("wipers", () => { state.wipers = !state.wipers; });
   toggle("rainbtn", () => { setWeather(state.weatherMode === "rain" ? "auto" : "rain"); });
+  toggle("unstick", () => recoverCar());
   toggle("menubtn", () => {
     const menu = document.getElementById("worldmenu");
     if (menu) menu.classList.toggle("open");
@@ -4526,11 +4571,35 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "voyage-5432g",
+    build: "voyage-5432h",
+    recoverCar,
     setWeather,
     setSeed,
     auditSeed,
     biomeAt,
+    probeRoad(z0, z1) {
+      const ray = new THREE.Raycaster();
+      const down = new THREE.Vector3(0, -1, 0);
+      const holes = [];
+      const jumps = [];
+      let prev = null;
+      for (let z = z0; z <= z1; z += 3) {
+        ensureRoad(z);
+        const x = roadX(z);
+        const gy = groundHeight(x, z);
+        if (prev && Math.abs(gy - prev.h) > 0.35 && Math.abs(z - prev.z) <= 3) {
+          jumps.push({ z, dh: +(gy - prev.h).toFixed(2), kind: segKind(z) });
+        }
+        prev = { z, h: gy };
+        ray.set(new THREE.Vector3(x, gy + 30, z), down);
+        const hits = ray.intersectObjects(scene.children, true);
+        const top = hits.find((h) => h.object !== skyMesh && h.object.type !== "Points");
+        if (!top || top.point.y < gy - 0.8) {
+          holes.push({ z: Math.round(z), hit: top ? +top.point.y.toFixed(2) : null, ground: +gy.toFixed(2), kind: segKind(z) });
+        }
+      }
+      return { holes: holes.slice(0, 12), holeCount: holes.length, jumps: jumps.slice(0, 12), jumpCount: jumps.length };
+    },
     orbitState: () => ({ yaw: orbit.yaw, pitch: orbit.pitch, dist: orbit.dist, hold: orbit.hold, dragging: orbit.dragging }),
     clearRuts,
     roadSpot,
