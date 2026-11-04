@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="iphone12pm-3">
+<meta name="car-build" content="iphone12pm-4">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -182,6 +182,21 @@
     z-index: 3;
   }
   .steer, .pedals { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+  .steer { flex-direction: column; align-items: flex-start; }
+  .steer-btns { display: flex; gap: 8px; }
+  #wheel {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    background: rgba(8, 10, 12, 0.72);
+    color: #e8eef3;
+    border: 1px solid var(--line);
+    touch-action: none;
+    pointer-events: auto;
+  }
+  #wheel-rotor { width: 100%; height: 100%; }
+  #wheel svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+  #steerL, #steerR { width: 72px; height: 72px; }
   button {
     appearance: none;
     border: 1px solid var(--line);
@@ -211,10 +226,11 @@
     align-items: center;
     justify-content: center;
   }
-  #steerL, #steerR, #brake, #handbrake {
+  #brake, #handbrake {
     width: 92px;
     height: 92px;
   }
+  #steerL, #steerR { width: 72px; height: 72px; }
   #gas {
     width: 108px;
     height: 108px;
@@ -310,8 +326,20 @@
 <p id="hint"></p>
 <div id="touch">
   <div class="steer">
+    <div id="wheel" aria-label="Steering wheel" role="slider">
+      <div id="wheel-rotor">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="10"/>
+          <circle cx="50" cy="50" r="8" fill="currentColor"/>
+          <path d="M50 18 V50 M18 62 L50 50 L82 62" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="50" cy="16" r="5" fill="#ffbf3c"/>
+        </svg>
+      </div>
+    </div>
+    <div class="steer-btns">
     <button type="button" id="steerL" aria-label="Steer left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19"/></svg></button>
     <button type="button" id="steerR" aria-label="Steer right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19"/></svg></button>
+    </div>
   </div>
   <div class="pedals">
     <button type="button" id="handbrake" aria-label="Handbrake"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20h8"/><path d="M12 20V9"/><circle cx="12" cy="6.2" r="2.2"/></svg></button>
@@ -385,12 +413,17 @@ const CONFIG = {
     longitudinal: { B: 10.2, C: 1.52, E: 0.97 },
     lateral: { B: 7.6, C: 1.48, E: 0.97 },
     loadSensitivity: 0.14,
-    relaxation: 0.25,
+    relaxation: 0.42,
     kappaFloor: 1.15,
     alphaFloor: 0.7,
+    // Tire spring in series with the suspension. Squash = F / verticalStiffness.
+    verticalStiffness: 160000,
+    maxSquashFraction: 0.2,
+    flexStiffness: 55000,
+    flexTime: 0.09,
   },
   brake: { frontTorque: 1650, rearTorque: 1150, handbrakeTorque: 4200 },
-  steer: { maxAngle: 0.5, rate: 2.7, returnRate: 3.4, speedFade: 0.4, fadeSpeed: 34 },
+  steer: { maxAngle: 0.5, rate: 2.7, returnRate: 3.4, speedFade: 0.4, fadeSpeed: 34, wheelLock: 1.15 },
   engine: {
     idleRpm: 900,
     maxRpm: 7000,
@@ -434,23 +467,27 @@ const CONFIG = {
   // mu is peak friction. lng/lat are Pacejka shapes: C near 1.2 keeps force high past the peak
   // (progressive slide); C near 1.55 lets it fall off. sink is 1/s, drag = sink * Fz * speed.
   surfaces: {
-    asphalt: { mu: 1.0, rolling: 0.012, sink: 0, lng: { B: 11.5, C: 1.58, E: 0.97 }, lat: { B: 8.4, C: 1.52, E: 0.97 }, color: "#4a4f56" },
-    wet: { mu: 0.7, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
-    dirt: { mu: 0.7, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
-    grass: { mu: 0.6, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
-    sand: { mu: 0.6, rolling: 0.04, sink: 0.014, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
+    asphalt: { mu: 1.08, rolling: 0.011, sink: 0, lng: { B: 12.2, C: 1.62, E: 0.97 }, lat: { B: 9.4, C: 1.58, E: 0.97 }, color: "#4a4f56" },
+    wet: { mu: 0.68, rolling: 0.016, sink: 0, lng: { B: 8.6, C: 1.4, E: 0.97 }, lat: { B: 6.2, C: 1.34, E: 0.97 }, color: "#3a4a5c" },
+    dirt: { mu: 0.66, rolling: 0.028, sink: 0.006, lng: { B: 7.4, C: 1.28, E: 0.95 }, lat: { B: 5.2, C: 1.24, E: 0.95 }, color: "#8a5a30" },
+    grass: { mu: 0.58, rolling: 0.03, sink: 0.0075, lng: { B: 6.6, C: 1.22, E: 0.95 }, lat: { B: 4.6, C: 1.18, E: 0.95 }, color: "#3c7a36" },
+    sand: { mu: 0.55, rolling: 0.035, sink: 0.01, restSink: 0.018, maxSink: 0.06, dig: 0.045, recover: 0.55, gripLoss: 0.4, rutDrag: 2.4, lng: { B: 6.0, C: 1.2, E: 0.96 }, lat: { B: 4.4, C: 1.16, E: 0.96 }, color: "#c6a15a" },
+    snow: { mu: 0.3, rolling: 0.02, sink: 0.008, restSink: 0.05, maxSink: 0.15, dig: 0.09, recover: 0.9, gripLoss: 0.58, rutDrag: 1.15, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
+    mud: { mu: 0.4, rolling: 0.04, sink: 0.012, restSink: 0.038, maxSink: 0.1, dig: 0.06, recover: 0.55, gripLoss: 0.5, rutDrag: 2.1, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
     ice: { mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
   },
   track: {
     defaultSurface: "grass",
     blend: 2.6,
-    mesh: { minX: -80, maxX: 84, minZ: -40, maxZ: 420, res: 2 },
+    mesh: { minX: -102, maxX: 112, minZ: -40, maxZ: 420, res: 2.5 },
     // First matching rectangle wins. x,z is the min corner. Long lanes so each surface can be driven.
     zones: [
+      { surface: "snow", x: -98, z: -40, w: 18, d: 420, mark: true },
       { surface: "sand", x: -64, z: -40, w: 20, d: 420, mark: true },
       { surface: "dirt", x: 22, z: -40, w: 18, d: 420, mark: true },
       { surface: "wet", x: 44, z: -40, w: 16, d: 420, mark: true },
       { surface: "ice", x: 64, z: -40, w: 16, d: 420, mark: true },
+      { surface: "mud", x: 84, z: -40, w: 18, d: 420, mark: true },
       { surface: "wet", x: -9, z: 248, w: 18, d: 70, mark: true },
       { surface: "ice", x: -9, z: 168, w: 18, d: 60, mark: true },
       { surface: "asphalt", x: -9, z: -40, w: 18, d: 440 },
@@ -472,6 +509,8 @@ const CONFIG = {
       { text: "WET LANE", x: 52, z: 18, color: "#b7d4ea" },
       { text: "ICE LANE", x: 72, z: 18, color: "#e7f4fb" },
       { text: "GRASS", x: -28, z: 12, color: "#d5f0c8" },
+      { text: "SNOW", x: -89, z: 16, color: "#f4fbff" },
+      { text: "MUD", x: 93, z: 16, color: "#d7c4a4" },
     ],
   },
   skid: { slip: 0.32, spacing: 0.18, pool: 260 },
@@ -758,6 +797,10 @@ const wheels = CONFIG.wheels.map((spec) => ({
   vLat: 0,
   steerAngle: 0,
   skidAcc: 0,
+  sinkDepth: 0,
+  tireSquash: 0,
+  latFlex: 0,
+  rutAcc: 0,
 }));
 
 const state = {
@@ -786,6 +829,7 @@ const input = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
 let scripted = null;
 const keys = new Set();
 const touch = { throttle: 0, brake: 0, steerL: 0, steerR: 0, handbrake: 0 };
+const steerUi = { angle: 0, dragging: false, last: 0 };
 
 function staticCompression() {
   const fz = (CONFIG.chassis.mass * CONFIG.physics.gravity) / CONFIG.wheels.length;
@@ -849,6 +893,8 @@ function reset(opts = {}) {
   state.reverseHold = 0;
   state.engineOmega = (CONFIG.engine.idleRpm * TAU) / 60;
   state.steer = 0;
+  steerUi.angle = 0;
+  steerUi.dragging = false;
   state.time = 0;
   state.tick = 0;
   state.blewUp = false;
@@ -866,6 +912,10 @@ function reset(opts = {}) {
     w.slipAngle = 0;
     w.driveTorque = 0;
     w.skidAcc = 0;
+    w.rutAcc = 0;
+    w.sinkDepth = 0;
+    w.tireSquash = 0;
+    w.latFlex = 0;
     w.inContact = true;
     w.surface = surfaceAt(state.position.x, state.position.z);
     w.steerAngle = 0;
@@ -893,8 +943,10 @@ function readInput() {
   const keyH = keys.has("Space") ? 1 : 0;
   input.throttle = Math.max(keyT, touch.throttle);
   input.brake = Math.max(keyB, touch.brake);
-  input.steer = clamp((keyR - keyL) + (touch.steerR - touch.steerL), -1, 1);
   input.handbrake = Math.max(keyH, touch.handbrake);
+  const buttons = touch.steerR - touch.steerL;
+  if (steerUi.dragging) input.steer = clamp(steerUi.angle / CONFIG.steer.wheelLock, -1, 1);
+  else input.steer = clamp((keyR - keyL) + buttons, -1, 1);
 }
 
 // In reverse the brake pedal is the throttle and the gas pedal slows you.
@@ -905,6 +957,11 @@ function pedals() {
 }
 
 function updateSteer(dt) {
+  if (!steerUi.dragging && !scripted) {
+    const target = input.steer * CONFIG.steer.wheelLock;
+    const maxStep = 3.2 * dt;
+    steerUi.angle += clamp(target - steerUi.angle, -maxStep, maxStep);
+  }
   const speed = Math.hypot(state.velocity.x, state.velocity.z);
   const fade = lerp(1, CONFIG.steer.speedFade, clamp(speed / CONFIG.steer.fadeSpeed, 0, 1));
   const target = input.steer * CONFIG.steer.maxAngle * fade;
@@ -950,7 +1007,6 @@ function updateReverse(dt) {
 function castSuspension() {
   const down = normalize(rotateVec(state.quat, { x: 0, y: -1, z: 0 }));
   const rayLen = CONFIG.suspension.restLength + CONFIG.wheels[0].radius + 0.08;
-  const minLen = CONFIG.suspension.restLength - CONFIG.suspension.maxCompression;
   for (const w of wheels) {
     const origin = localToWorld({ x: w.spec.x, y: w.spec.y, z: w.spec.z });
     const hit = raycast(origin, down, rayLen);
@@ -963,22 +1019,22 @@ function castSuspension() {
       w.inContact = false;
       w.suspensionLength = CONFIG.suspension.restLength;
       w.compression = 0;
+      w.tireSquash = 0;
       w.fz = 0;
       w.surface = surfaceAt(origin.x, origin.z);
       w.normal = { x: 0, y: 1, z: 0 };
       w.centerWorld = localToWorld({ x: w.spec.x, y: w.spec.y - w.suspensionLength, z: w.spec.z });
       continue;
     }
-    let len = hit.distance - w.spec.radius;
-    let bump = 0;
-    if (len < minLen) {
-      bump = (minLen - len) * CONFIG.suspension.bumpStop;
-      len = minLen;
-    }
-    if (len >= CONFIG.suspension.restLength - 1e-4) {
+    const radius = w.spec.radius;
+    const kS = CONFIG.suspension.stiffness;
+    const kT = CONFIG.tire.verticalStiffness;
+    const defl = CONFIG.suspension.restLength + radius - hit.distance;
+    if (defl <= 1e-4) {
       w.inContact = false;
       w.suspensionLength = CONFIG.suspension.restLength;
       w.compression = 0;
+      w.tireSquash = 0;
       w.fz = 0;
       w.surface = hit.surface;
       w.normal = hit.normal;
@@ -986,13 +1042,23 @@ function castSuspension() {
       w.centerWorld = localToWorld({ x: w.spec.x, y: w.spec.y - w.suspensionLength, z: w.spec.z });
       continue;
     }
+    // Series springs: the softer suspension takes most of the travel, the tire squashes a little.
+    let xSusp = (kT / (kS + kT)) * defl;
+    let xTire = (kS / (kS + kT)) * defl;
+    let bump = 0;
+    if (xSusp > CONFIG.suspension.maxCompression) {
+      bump = (xSusp - CONFIG.suspension.maxCompression) * CONFIG.suspension.bumpStop;
+      xSusp = CONFIG.suspension.maxCompression;
+    }
+    xTire = clamp(xTire, 0, radius * CONFIG.tire.maxSquashFraction);
+    w.tireSquash = xTire;
     w.inContact = true;
-    w.suspensionLength = len;
-    w.compression = CONFIG.suspension.restLength - len;
+    w.suspensionLength = CONFIG.suspension.restLength - xSusp;
+    w.compression = xSusp;
     w.contact = hit.point;
     w.normal = hit.normal;
     w.surface = hit.surface;
-    w.centerWorld = localToWorld({ x: w.spec.x, y: w.spec.y - len, z: w.spec.z });
+    w.centerWorld = localToWorld({ x: w.spec.x, y: w.spec.y - w.suspensionLength, z: w.spec.z });
 
     const denom = dot(hit.normal, down);
     let inv = 8;
@@ -1001,7 +1067,7 @@ function castSuspension() {
       inv = -1 / denom;
       rel = dot(hit.normal, velocityAt(hit.point)) * inv;
     }
-    let force = CONFIG.suspension.stiffness * w.compression * inv;
+    let force = kS * xSusp * inv;
     const damp = rel < 0 ? CONFIG.suspension.dampingBump : CONFIG.suspension.dampingRebound;
     force -= damp * rel;
     force += bump;
@@ -1162,7 +1228,10 @@ function solveTires(dt) {
 
     const surf = w.grip || surfaceParams(w.contact.x, w.contact.z);
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
-    const peak = surf.mu * w.fz * load;
+    const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
+    const sunk = spec.maxSink ? clamp(w.sinkDepth / spec.maxSink, 0, 1) : 0;
+    const gripScale = 1 - (spec.gripLoss || 0) * sunk;
+    const peak = surf.mu * gripScale * w.fz * load;
     let fx = magic(w.slipRatio, surf.lng) * peak;
     let fy = -magic(w.slipAngle, surf.lat) * peak;
     const rho = Math.hypot(fx / peak, fy / peak);
@@ -1172,6 +1241,25 @@ function solveTires(dt) {
     }
     w.fx = fx;
     w.fy = fy;
+    const flexTarget = clamp(-fy / CONFIG.tire.flexStiffness, -0.07, 0.07);
+    w.latFlex += (flexTarget - w.latFlex) * (1 - Math.exp(-dt / CONFIG.tire.flexTime));
+  }
+}
+
+function updateSink(dt) {
+  for (const w of wheels) {
+    const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
+    if (!spec.maxSink) {
+      w.sinkDepth += (0 - w.sinkDepth) * Math.min(1, 1.5 * dt);
+      continue;
+    }
+    const slip = Math.abs(w.slipRatio);
+    const digging = w.inContact && slip > 0.32 && input.throttle > 0.55;
+    const rolling = w.inContact && Math.abs(w.vLong) > 0.6 && slip < 0.22;
+    if (digging) w.sinkDepth += spec.dig * Math.min(slip, 2.2) * dt;
+    else if (rolling) w.sinkDepth += (spec.restSink - w.sinkDepth) * Math.min(1, spec.recover * dt);
+    else if (w.inContact) w.sinkDepth += (spec.restSink - w.sinkDepth) * Math.min(1, 0.35 * dt);
+    w.sinkDepth = clamp(w.sinkDepth, 0, spec.maxSink);
   }
 }
 
@@ -1187,9 +1275,11 @@ function applyContactForces() {
     const hs = vecLen(tangent);
     if (hs > 0.04 && w.fz > 0) {
       // Constant rolling plus sinkage that grows with speed (loose surfaces), not a stuck-in-the-mud constant.
+      const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
       const roll = surf.rolling * w.fz * Math.min(1, hs / 1.4);
       const sink = surf.sink * w.fz * hs;
-      applyForce(w.contact, mul(tangent, -(roll + sink) / hs));
+      const rut = (spec.rutDrag || 0) * w.sinkDepth * w.fz;
+      applyForce(w.contact, mul(tangent, -(roll + sink + rut) / hs));
     }
   }
   const v = state.velocity;
@@ -1305,6 +1395,7 @@ function stepPhysics(dt) {
   applyAntiRoll();
   solvePowertrain(dt);
   solveTires(dt);
+  updateSink(dt);
   applyContactForces();
   collideChassis();
   integrateWheels(dt);
@@ -1331,6 +1422,8 @@ const specks = [];
 let speckI = 0;
 let skidPool = [];
 let skidCursor = 0;
+let rutPool = [];
+let rutCursor = 0;
 let effectsReady = false;
 
 function hash01(n) {
@@ -1341,8 +1434,13 @@ function hash01(n) {
 function clearEffects() {
   for (const p of specks) p.life = 0;
   for (const m of skidPool) m.visible = false;
+  for (const m of rutPool) m.visible = false;
   skidCursor = 0;
-  for (const w of wheels) w.skidAcc = 0;
+  rutCursor = 0;
+  for (const w of wheels) {
+    w.skidAcc = 0;
+    w.rutAcc = 0;
+  }
 }
 
 function dropSkid(w, slip) {
@@ -1361,6 +1459,22 @@ function dropSkid(w, slip) {
       m.material.opacity = 0.72;
     }
   }
+
+function dropRut(w) {
+  if (!rutPool.length) return;
+  const m = rutPool[rutCursor];
+  rutCursor = (rutCursor + 1) % rutPool.length;
+  m.visible = true;
+  const side = w.spec.x < 0 ? -0.08 : 0.08;
+  m.position.set(w.contact.x + w.right.x * side, w.contact.y + 0.025, w.contact.z + w.right.z * side);
+  m.rotation.set(0, Math.atan2(w.forward.x, w.forward.z), 0);
+  const deep = clamp(w.sinkDepth / 0.12, 0.35, 1);
+  m.scale.set(0.7 + deep * 0.5, 1, 0.85);
+  if (w.surface === "snow") m.material.color.setHex(0x9eb0be);
+  else if (w.surface === "sand") m.material.color.setHex(0x8c7040);
+  else m.material.color.setHex(0x2a1c12);
+  m.material.opacity = 0.45 + deep * 0.4;
+}
 
 function emitSpeck(x, y, z, vx, vy, vz, color) {
   const p = specks[speckI];
@@ -1388,11 +1502,23 @@ function updateEffects(dt) {
     } else {
       w.skidAcc = 0;
     }
-    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning);
+    const rutty = w.surface === "snow" || w.surface === "sand" || w.surface === "mud";
+    if (rutty && w.sinkDepth > 0.02) {
+      w.rutAcc += Math.max(Math.hypot(w.vLong, w.vLat), spinning ? 1.4 : 0) * dt;
+      if (w.rutAcc >= 0.22) {
+        w.rutAcc = 0;
+        dropRut(w);
+      }
+    } else {
+      w.rutAcc = 0;
+    }
+    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning) || (rutty && spinning);
     if (sprayOn && state.tick % 2 === 0) {
       const spray = w.surface === "sand" ? { r: 0.86, g: 0.72, b: 0.4 }
         : w.surface === "dirt" ? { r: 0.55, g: 0.36, b: 0.18 }
         : w.surface === "grass" ? { r: 0.42, g: 0.62, b: 0.28 }
+        : w.surface === "snow" ? { r: 0.93, g: 0.96, b: 1 }
+        : w.surface === "mud" ? { r: 0.32, g: 0.22, b: 0.12 }
         : w.surface === "ice" ? { r: 0.9, g: 0.95, b: 1 }
         : { r: 0.62, g: 0.62, b: 0.62 };
       const j = hash01(state.tick * 0.17 + w.spec.x * 3 + w.spec.z);
@@ -1467,6 +1593,111 @@ scene.add(sun.target);
 const fill = new THREE.DirectionalLight(0xc5d7e6, 0.38);
 scene.add(fill);
 
+const SURFACE_ID = { asphalt: 0, wet: 1, dirt: 2, grass: 3, sand: 4, ice: 5, snow: 6, mud: 7 };
+
+function makeSurfaceAtlas() {
+  const S = 128;
+  const c = document.createElement("canvas");
+  c.width = S * 4;
+  c.height = S * 2;
+  const g = c.getContext("2d");
+  const rnd = (x, y) => {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  };
+  let ox = 0;
+  let oy = 0;
+  const tile = (id, paint) => {
+    ox = (id % 4) * S;
+    oy = Math.floor(id / 4) * S;
+    g.save();
+    g.translate(ox, oy);
+    paint(g, S);
+    g.restore();
+  };
+  const grain = (g, S, rgb, amp) => {
+    const img = g.getImageData(ox, oy, S, S);
+    const d = img.data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const n = rnd(x, y);
+        d[i] = clamp(rgb[0] + (n - 0.5) * amp, 0, 255);
+        d[i + 1] = clamp(rgb[1] + (n - 0.5) * amp, 0, 255);
+        d[i + 2] = clamp(rgb[2] + (n - 0.5) * amp, 0, 255);
+        d[i + 3] = 255;
+      }
+    }
+    g.putImageData(img, ox, oy);
+  };
+  tile(0, (g, S) => { grain(g, S, [74, 79, 86], 28); g.strokeStyle = "rgba(30,30,32,0.35)"; g.lineWidth = 1; for (let i = 8; i < S; i += 18) { g.beginPath(); g.moveTo(0, i); g.lineTo(S, i + 2); g.stroke(); } });
+  tile(1, (g, S) => { grain(g, S, [48, 62, 78], 22); g.fillStyle = "rgba(180,200,220,0.18)"; for (let i = 0; i < 8; i++) g.fillRect(rnd(i, 3) * S, rnd(i, 9) * S, 30, 3); });
+  tile(2, (g, S) => { grain(g, S, [122, 78, 42], 46); });
+  tile(3, (g, S) => { grain(g, S, [52, 110, 48], 40); g.strokeStyle = "rgba(30,80,28,0.45)"; for (let i = 0; i < 40; i++) { g.beginPath(); g.moveTo(rnd(i, 1) * S, rnd(i, 2) * S); g.lineTo(rnd(i, 4) * S, rnd(i, 5) * S); g.stroke(); } });
+  tile(4, (g, S) => {
+    grain(g, S, [198, 168, 96], 26);
+    g.strokeStyle = "rgba(160,120,60,0.35)";
+    for (let y = 0; y < S; y += 6) {
+      g.beginPath();
+      for (let x = 0; x <= S; x += 4) g.lineTo(x, y + Math.sin((x + y) * 0.18) * 2.2);
+      g.stroke();
+    }
+  });
+  tile(5, (g, S) => { grain(g, S, [214, 230, 238], 16); });
+  tile(6, (g, S) => {
+    grain(g, S, [236, 242, 246], 18);
+    const img = g.getImageData(ox, oy, S, S);
+    const d = img.data;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const n = rnd(x * 0.3, y * 0.3);
+        if (n < 0.45) { d[i] -= 18; d[i + 1] -= 10; d[i + 2] += 8; }
+        if (rnd(x + 20, y) > 0.97) { d[i] = 255; d[i + 1] = 255; d[i + 2] = 255; }
+      }
+    }
+    g.putImageData(img, ox, oy);
+  });
+  tile(7, (g, S) => {
+    grain(g, S, [58, 40, 28], 30);
+    g.fillStyle = "rgba(90,110,90,0.55)";
+    for (let i = 0; i < 7; i++) {
+      g.beginPath();
+      g.ellipse(20 + rnd(i, 2) * (S - 40), 16 + rnd(i, 8) * (S - 32), 10 + rnd(i, 4) * 16, 6 + rnd(i, 6) * 8, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = "rgba(210,220,200,0.35)";
+    for (let i = 0; i < 7; i++) g.fillRect(18 + rnd(i, 2) * (S - 40), 14 + rnd(i, 8) * (S - 32), 8, 2);
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function groundMaterial(atlas) {
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02 });
+  mat.customProgramCacheKey = () => "surface-atlas-1";
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.atlasMap = { value: atlas };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float surfaceId;\nvarying float vSid;\nvarying vec3 vWpos;")
+      .replace("#include <uv_vertex>", "#include <uv_vertex>\nvSid = surfaceId;\nvWpos = position;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vSid;\nvarying vec3 vWpos;\nuniform sampler2D atlasMap;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float col = mod(vSid, 4.0);
+        float rowTop = floor(vSid / 4.0);
+        vec2 f = fract(vWpos.xz * 0.35) * 0.84 + 0.08;
+        float v0 = 1.0 - (rowTop + 1.0) / 2.0;
+        vec2 auv = vec2((col + f.x) / 4.0, v0 + f.y / 2.0);
+        diffuseColor.rgb *= texture2D(atlasMap, auv).rgb;`);
+  };
+  return mat;
+}
+
 function buildTrack() {
   const mesh = CONFIG.track.mesh;
   const res = mesh.res;
@@ -1475,6 +1706,7 @@ function buildTrack() {
   const positions = new Float32Array(cols * rows * 3);
   const normals = new Float32Array(cols * rows * 3);
   const colors = new Float32Array(cols * rows * 3);
+  const surfIds = new Float32Array(cols * rows);
   const color = new THREE.Color();
   let k = 0;
   for (let j = 0; j < rows; j++) {
@@ -1490,6 +1722,7 @@ function buildTrack() {
       normals[k + 1] = n.y;
       normals[k + 2] = n.z;
       const surf = surfaceAt(x, z);
+      surfIds[k / 3] = SURFACE_ID[surf] ?? 3;
       color.set(CONFIG.surfaces[surf].color);
       if (surf === "grass") {
         const tuft = 0.5 + 0.5 * Math.sin(x * 1.7) * Math.sin(z * 1.45);
@@ -1531,11 +1764,9 @@ function buildTrack() {
   geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geom.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
   geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geom.setAttribute("surfaceId", new THREE.BufferAttribute(surfIds, 1));
   geom.setIndex(index);
-  const ground = new THREE.Mesh(
-    geom,
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, metalness: 0 }),
-  );
+  const ground = new THREE.Mesh(geom, groundMaterial(makeSurfaceAtlas()));
   ground.receiveShadow = true;
   scene.add(ground);
 
@@ -1667,6 +1898,32 @@ function buildCar() {
     const tail = add(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.06), tailMat));
     tail.position.set(x, 0.12, -1.8);
   }
+  const wheelRig = new THREE.Group();
+  wheelRig.position.set(-0.28, 0.3, 0.28);
+  wheelRig.rotation.x = 0.85;
+  const wheelSpin = new THREE.Group();
+  wheelRig.add(wheelSpin);
+  const rimW = new THREE.Mesh(
+    new THREE.TorusGeometry(0.11, 0.012, 8, 16),
+    new THREE.MeshStandardMaterial({ color: 0x1b1f24, roughness: 0.45, metalness: 0.4 }),
+  );
+  wheelSpin.add(rimW);
+  for (let s = 0; s < 3; s++) {
+    const spoke = new THREE.Mesh(
+      new THREE.BoxGeometry(0.012, 0.2, 0.01),
+      new THREE.MeshStandardMaterial({ color: 0xc5ccd1, metalness: 0.6, roughness: 0.35 }),
+    );
+    spoke.rotation.z = s * Math.PI / 3;
+    wheelSpin.add(spoke);
+  }
+  const hubW = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.025, 0.025, 0.02, 10),
+    new THREE.MeshStandardMaterial({ color: 0xd3541a, roughness: 0.4 }),
+  );
+  hubW.rotation.x = Math.PI / 2;
+  wheelSpin.add(hubW);
+  chassis.add(wheelRig);
+  chassis.userData.steerWheel = wheelSpin;
 
   const tread = makeTread();
   const tireMat = new THREE.MeshStandardMaterial({ map: tread, color: 0x222222, roughness: 0.85 });
@@ -1771,6 +2028,16 @@ function buildEffects() {
     scene.add(m);
     skidPool.push(m);
   }
+  const rutGeo = new THREE.BoxGeometry(0.34, 0.012, 0.55);
+  for (let i = 0; i < 140; i++) {
+    const m = new THREE.Mesh(
+      rutGeo,
+      new THREE.MeshBasicMaterial({ color: 0x8c7040, transparent: true, opacity: 0.7, depthWrite: false }),
+    );
+    m.visible = false;
+    scene.add(m);
+    rutPool.push(m);
+  }
   effectsReady = true;
 }
 
@@ -1826,11 +2093,20 @@ function updateVisuals(frameDt) {
   chassis.position.set(state.position.x, state.position.y, state.position.z);
   chassis.quaternion.set(state.quat.x, state.quat.y, state.quat.z, state.quat.w);
 
+  if (scripted && !steerUi.dragging) steerUi.angle = input.steer * CONFIG.steer.wheelLock;
+  const wheelEl = document.getElementById("wheel-rotor");
+  if (wheelEl) wheelEl.style.transform = `rotate(${steerUi.angle}rad)`;
+  if (chassis.userData.steerWheel) chassis.userData.steerWheel.rotation.z = -steerUi.angle;
+
   for (const w of wheels) {
-    const y = w.spec.y - w.suspensionLength;
+    const squash = Math.min((w.tireSquash || 0) * 2.2, w.spec.radius * 0.18);
+    const sink = w.sinkDepth || 0;
+    const y = w.spec.y - w.suspensionLength - sink - squash;
     w.visual.steer.position.set(w.spec.x, y, w.spec.z);
     w.visual.steer.rotation.set(0, w.steerAngle, 0);
-    w.visual.spin.rotation.set(w.spinAngle, 0, 0);
+    const sy = Math.max(0.72, (w.spec.radius - squash) / w.spec.radius);
+    w.visual.spin.scale.set(1, sy, 1);
+    w.visual.spin.rotation.set(w.spinAngle, 0, w.latFlex || 0);
     const slipV = Math.abs(w.omega * w.spec.radius - w.vLong);
     const blur = clamp(Math.abs(w.omega) / 40, 0, 1);
     w.visual.ghosts.forEach((g, i) => {
@@ -2024,6 +2300,30 @@ function bindInput() {
   bindHold(document.getElementById("handbrake"), () => { touch.handbrake = 1; }, () => { touch.handbrake = 0; });
   bindHold(document.getElementById("steerL"), () => { touch.steerL = 1; }, () => { touch.steerL = 0; });
   bindHold(document.getElementById("steerR"), () => { touch.steerR = 1; }, () => { touch.steerR = 0; });
+  const wheel = document.getElementById("wheel");
+  const wheelAngle = (e) => {
+    const r = wheel.getBoundingClientRect();
+    return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
+  };
+  wheel.addEventListener("pointerdown", (e) => {
+    steerUi.dragging = true;
+    steerUi.last = wheelAngle(e);
+    try { wheel.setPointerCapture(e.pointerId); } catch (err) { /* synthetic */ }
+    e.preventDefault();
+  });
+  wheel.addEventListener("pointermove", (e) => {
+    if (!steerUi.dragging) return;
+    const ang = wheelAngle(e);
+    let delta = ang - steerUi.last;
+    if (delta > Math.PI) delta -= Math.PI * 2;
+    if (delta < -Math.PI) delta += Math.PI * 2;
+    steerUi.last = ang;
+    steerUi.angle = clamp(steerUi.angle + delta, -CONFIG.steer.wheelLock, CONFIG.steer.wheelLock);
+    e.preventDefault();
+  });
+  const wheelEnd = () => { steerUi.dragging = false; };
+  wheel.addEventListener("pointerup", wheelEnd);
+  wheel.addEventListener("pointercancel", wheelEnd);
   const swallow = (e) => e.preventDefault();
   const guard = (el) => {
     el.addEventListener("touchstart", swallow, { passive: false });
@@ -2033,7 +2333,7 @@ function bindInput() {
   };
   guard(document);
   guard(document.body);
-  for (const el of document.querySelectorAll("button, #hud, #touch, #rotate, #hint, #legend")) guard(el);
+  for (const el of document.querySelectorAll("button, #hud, #touch, #rotate, #hint, #legend, #wheel")) guard(el);
   document.addEventListener("gesturestart", swallow, { passive: false });
   document.addEventListener("gesturechange", swallow, { passive: false });
   document.addEventListener("dblclick", swallow);
@@ -2103,6 +2403,10 @@ function report() {
         surface: w.surface,
         slipRatio: w.slipRatio,
         slipAngle: w.slipAngle,
+        steerAngle: w.steerAngle,
+        sinkDepth: w.sinkDepth,
+        tireSquash: w.tireSquash,
+        latFlex: w.latFlex,
         omega: w.omega,
         driveTorque: w.driveTorque,
         fz: w.fz,
@@ -2179,7 +2483,18 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "iphone12pm-3",
+    build: "iphone12pm-4",
+    wheelAngle: () => steerUi.angle,
+    lookAtWheel(id) {
+      const w = wheels.find((wheel) => wheel.spec.id === id) || wheels[0];
+      const p = new THREE.Vector3();
+      w.visual.steer.getWorldPosition(p);
+      const side = Math.sign(w.spec.x) || 1;
+      camera.position.set(p.x + side * 1.15, p.y + 0.2, p.z + 0.35);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(p);
+      renderer.render(scene, camera);
+    },
     pixelRatio: () => renderer.getPixelRatio(),
     controls() {
       readInput();
