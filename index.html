@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="car-build" content="iphone12pm-5">
+<meta name="car-build" content="iphone12pm-6">
 <title>Car mechanics</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23d3541a' width='16' height='16' rx='3'/%3E%3C/svg%3E">
 <style>
@@ -475,6 +475,19 @@ const CONFIG = {
     snow: { mu: 0.3, rolling: 0.018, sink: 0.004, loose: true, slipGain: 0.85, digAbove: 1.0, recoverBelow: 1.35, recover: 0.4, gripLoss: 0.72, hDrag: 0.055, spinDamp: 1200, lng: { B: 5.2, C: 1.18, E: 0.96 }, lat: { B: 4.0, C: 1.14, E: 0.96 }, color: "#e7eef3" },
     mud: { mu: 0.4, rolling: 0.032, sink: 0.006, loose: true, slipGain: 0.5, recover: 0.32, gripLoss: 0.65, hDrag: 0.08, spinDamp: 1400, lng: { B: 5.6, C: 1.2, E: 0.95 }, lat: { B: 4.2, C: 1.16, E: 0.95 }, color: "#4a3424" },
     ice: { mu: 0.1, rolling: 0.005, sink: 0, lng: { B: 5.5, C: 1.32, E: 0.97 }, lat: { B: 4.0, C: 1.28, E: 0.97 }, color: "#d5e7f0" },
+    water: { mu: 0.62, rolling: 0.02, sink: 0, lng: { B: 7.2, C: 1.3, E: 0.97 }, lat: { B: 5.4, C: 1.26, E: 0.97 }, color: "#1c6e86" },
+  },
+  // Ford cut into the road. Depth is how far the bed sits under the water surface.
+  water: {
+    ford: { x: -9, z: 20, w: 18, d: 34, depth: 0.62 },
+    level: 0.03,
+    shallow: 0.12,
+    hub: 0.3,
+    deep: 0.5,
+    muDeep: 0.28,
+    drag: 95,
+    buoyancy: 5200,
+    buoyancyCap: 0.28,
   },
   track: {
     defaultSurface: "grass",
@@ -493,12 +506,14 @@ const CONFIG = {
       { surface: "asphalt", x: -9, z: -40, w: 18, d: 440 },
     ],
     features: [
+      { type: "ford", x: -9, z: 20, w: 18, d: 34, depth: 0.62 },
       { type: "bump", x: -10, z: 62, w: 20, d: 3.2, height: 0.16 },
       { type: "whoops", x: -10, z: 82, w: 20, d: 32, amp: 0.28, cycles: 4 },
       { type: "ramp", x: -10, z: 128, w: 20, d: 18, height: 1.7 },
     ],
     labels: [
-      { text: "ASPHALT", x: 14, z: 28, color: "#d7dde3" },
+      { text: "WATER", x: 14, z: 37, color: "#9fd8ea" },
+      { text: "ASPHALT", x: 14, z: 8, color: "#d7dde3" },
       { text: "BUMP", x: 14, z: 62, color: "#ffbf3c" },
       { text: "WHOOPS", x: 14, z: 98, color: "#ffbf3c" },
       { text: "RAMP", x: 14, z: 136, color: "#ffbf3c" },
@@ -703,12 +718,22 @@ function featureHeight(x, z, f) {
     const edge = smoothstep(0, 0.15, u) * smoothstep(1, 0.85, u);
     return edge * f.height * Math.sin(v * Math.PI);
   }
+  if (f.type === "ford") return -waterDepth(x, z);
   if (f.type === "ramp") {
     const side = smoothstep(0, 0.08, u) * smoothstep(1, 0.92, u);
     const profile = v < 0.62 ? smoothstep(0, 1, v / 0.62) : 1 - smoothstep(0, 1, (v - 0.62) / 0.38);
     return side * f.height * profile;
   }
   return 0;
+}
+
+function waterDepth(x, z) {
+  const f = CONFIG.water.ford;
+  const u = (x - f.x) / f.w;
+  const v = (z - f.z) / f.d;
+  if (u <= 0 || u >= 1 || v <= 0 || v >= 1) return 0;
+  const side = smoothstep(0, 0.14, u) * smoothstep(1, 0.86, u);
+  return f.depth * Math.sin(Math.PI * v) * side;
 }
 
 function groundHeight(x, z) {
@@ -1010,6 +1035,7 @@ function castSuspension() {
   for (const w of wheels) {
     const origin = localToWorld({ x: w.spec.x, y: w.spec.y, z: w.spec.z });
     const hit = raycast(origin, down, rayLen);
+    w.water = 0;
     w.centerWorld = localToWorld({
       x: w.spec.x,
       y: w.spec.y - w.suspensionLength,
@@ -1058,6 +1084,8 @@ function castSuspension() {
     w.contact = hit.point;
     w.normal = hit.normal;
     w.surface = hit.surface;
+    w.water = waterDepth(hit.point.x, hit.point.z);
+    if (w.water > 0.04) w.surface = "water";
     w.centerWorld = localToWorld({ x: w.spec.x, y: w.spec.y - w.suspensionLength, z: w.spec.z });
 
     const denom = dot(hit.normal, down);
@@ -1230,7 +1258,13 @@ function solveTires(dt) {
     const load = Math.max(0.3, 1 - CONFIG.tire.loadSensitivity * ((w.fz - ref) / ref));
     const spec = CONFIG.surfaces[w.surface] || CONFIG.surfaces.grass;
     const gripScale = 1 - (spec.gripLoss || 0) * clamp(w.sinkDepth, 0, 1);
-    const peak = surf.mu * gripScale * w.fz * load;
+    let waterMul = 1;
+    if (w.water > 0) {
+      const shallow = clamp(w.water / CONFIG.water.shallow, 0, 1);
+      const deep = clamp((w.water - CONFIG.water.hub) / Math.max(0.05, CONFIG.water.deep - CONFIG.water.hub), 0, 1);
+      waterMul = lerp(1, CONFIG.surfaces.water.mu / Math.max(surf.mu, 0.2), shallow) * lerp(1, CONFIG.water.muDeep, deep);
+    }
+    const peak = surf.mu * gripScale * waterMul * w.fz * load;
     let fx = magic(w.slipRatio, surf.lng) * peak;
     let fy = -magic(w.slipAngle, surf.lat) * peak;
     const rho = Math.hypot(fx / peak, fy / peak);
@@ -1276,9 +1310,31 @@ function applyContactForces() {
       const roll = surf.rolling * w.fz * Math.min(1, hs / 1.4);
       const speedDrag = (surf.sink || 0) * w.fz * hs;
       const rut = (spec.hDrag || 0) * w.sinkDepth * w.fz * hs;
-      const mag = roll + speedDrag + rut;
+      let hydro = 0;
+      if (w.water > CONFIG.water.hub) {
+        const submerged = w.water - CONFIG.water.hub * 0.35;
+        hydro = CONFIG.water.drag * submerged * hs * hs;
+      }
+      const mag = roll + speedDrag + rut + hydro;
       applyForce(w.contact, { x: -vel.x / hs * mag, y: 0, z: -vel.z / hs * mag });
     }
+  }
+  // Belly in the ford: a capped upward force, never enough to float the car out.
+  let belly = 0;
+  let bellyN = 0;
+  for (const p of CONFIG.chassis.samples) {
+    if (p.y > 0) continue;
+    const world = localToWorld(p);
+    const bed = groundHeight(world.x, world.z);
+    const surfaceY = bed + waterDepth(world.x, world.z);
+    const under = surfaceY - world.y;
+    if (under > 0) belly += under;
+    bellyN++;
+  }
+  if (bellyN && belly > 0) {
+    const depth = belly / bellyN;
+    const lift = Math.min(CONFIG.water.buoyancy * depth, CONFIG.chassis.mass * CONFIG.physics.gravity * CONFIG.water.buoyancyCap);
+    applyForce(state.position, { x: 0, y: lift, z: 0 });
   }
   const v = state.velocity;
   const s = vecLen(v);
@@ -1517,7 +1573,8 @@ function updateEffects(dt) {
     } else {
       w.rutAcc = 0;
     }
-    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning) || (rutty && spinning && w.sinkDepth > 0.12);
+    const wetWheel = (w.water || 0) > 0.03 && Math.hypot(w.vLong, w.vLat) > 0.7;
+    const sprayOn = (loose && (spinning || slip > 0.28)) || (paved && spinning) || (w.surface === "ice" && spinning) || (rutty && spinning && w.sinkDepth > 0.12) || wetWheel;
     if (sprayOn && state.tick % 2 === 0) {
       const spray = w.surface === "sand" ? { r: 0.86, g: 0.72, b: 0.4 }
         : w.surface === "dirt" ? { r: 0.55, g: 0.36, b: 0.18 }
@@ -1525,13 +1582,14 @@ function updateEffects(dt) {
         : w.surface === "snow" ? { r: 0.93, g: 0.96, b: 1 }
         : w.surface === "mud" ? { r: 0.32, g: 0.22, b: 0.12 }
         : w.surface === "ice" ? { r: 0.9, g: 0.95, b: 1 }
+        : (w.water || 0) > 0.03 ? { r: 0.72, g: 0.88, b: 0.95 }
         : { r: 0.62, g: 0.62, b: 0.62 };
       const j = hash01(state.tick * 0.17 + w.spec.x * 3 + w.spec.z);
-      const atContact = rutty && w.sinkDepth > 0.12;
+      const atContact = (rutty && w.sinkDepth > 0.12) || (w.water || 0) > 0.03;
       emitSpeck(
-        w.contact.x + (atContact ? 0 : w.right.x * 0.4),
-        w.contact.y + (atContact ? 0.08 : 0.25),
-        w.contact.z + (atContact ? 0 : w.right.z * 0.4),
+        w.contact.x + (atContact ? w.right.x * 0.05 : w.right.x * 0.4),
+        w.contact.y + ((w.water || 0) > 0.03 ? 0.15 : atContact ? 0.08 : 0.25),
+        w.contact.z + (atContact ? w.right.z * 0.05 : w.right.z * 0.4),
         -w.forward.x * 0.8 + (j - 0.5) * 1.4,
         1.1 + j * 1.3,
         -w.forward.z * 0.8 + (hash01(j + 2) - 0.5) * 1.4,
@@ -1649,7 +1707,18 @@ function makeSurfaceAtlas() {
       g.stroke();
     }
   });
-  tile(5, (g, S) => { grain(g, S, [214, 230, 238], 16); });
+  tile(5, (g, S) => {
+    grain(g, S, [226, 238, 244], 14);
+    g.strokeStyle = "rgba(70, 100, 120, 0.55)";
+    g.lineWidth = 1;
+    const cracks = [[8, 20, 40, 36, 70, 28, 110, 60], [20, 90, 55, 70, 90, 100, 120, 80], [30, 10, 48, 40, 60, 90]];
+    for (const c of cracks) {
+      g.beginPath();
+      g.moveTo(c[0], c[1]);
+      for (let i = 2; i < c.length; i += 2) g.lineTo(c[i], c[i + 1]);
+      g.stroke();
+    }
+  });
   tile(6, (g, S) => {
     grain(g, S, [236, 242, 246], 18);
     const img = g.getImageData(ox, oy, S, S);
@@ -1699,9 +1768,70 @@ function groundMaterial(atlas) {
         vec2 f = fract(vWpos.xz * 0.35) * 0.84 + 0.08;
         float v0 = 1.0 - (rowTop + 1.0) / 2.0;
         vec2 auv = vec2((col + f.x) / 4.0, v0 + f.y / 2.0);
-        diffuseColor.rgb *= texture2D(atlasMap, auv).rgb;`);
+        diffuseColor.rgb *= texture2D(atlasMap, auv).rgb;
+        if (abs(vSid - 5.0) < 0.5) {
+          vec3 V = normalize(cameraPosition - vWpos);
+          float fres = pow(1.0 - max(V.y, 0.0), 2.4);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.82, 0.93, 0.98), 0.28);
+          diffuseColor.rgb += vec3(0.75, 0.88, 0.98) * fres * 0.95;
+        }`);
   };
   return mat;
+}
+
+function buildWater() {
+  const f = CONFIG.water.ford;
+  const geo = new THREE.PlaneGeometry(f.w, f.d, 28, 36);
+  geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      time: { value: 0 },
+      ford: { value: new THREE.Vector4(f.x, f.z, f.w, f.d) },
+      peak: { value: f.depth },
+    },
+    vertexShader: `
+      uniform float time;
+      uniform vec4 ford;
+      uniform float peak;
+      varying vec3 vPos;
+      varying float vDepth;
+      void main() {
+        vec4 world0 = modelMatrix * vec4(position, 1.0);
+        float u = clamp((world0.x - ford.x) / ford.z, 0.0, 1.0);
+        float v = clamp((world0.z - ford.y) / ford.w, 0.0, 1.0);
+        float side = smoothstep(0.0, 0.14, u) * smoothstep(1.0, 0.86, u);
+        vDepth = peak * sin(3.14159 * v) * side;
+        float ripple = sin(world0.x * 1.7 + time * 1.5) * 0.012 + sin(world0.z * 2.3 - time * 1.2) * 0.01;
+        vec3 p = position;
+        p.y += 0.03 + ripple * smoothstep(0.02, 0.12, vDepth);
+        vec4 world = modelMatrix * vec4(p, 1.0);
+        vPos = world.xyz;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec3 vPos;
+      varying float vDepth;
+      void main() {
+        if (vDepth < 0.025) discard;
+        vec3 V = normalize(cameraPosition - vPos);
+        float fres = pow(1.0 - max(V.y, 0.0), 2.2);
+        float shade = clamp(vDepth / 0.55, 0.0, 1.0);
+        vec3 col = mix(vec3(0.45, 0.72, 0.78), vec3(0.05, 0.22, 0.32), shade);
+        float glint = pow(max(sin(vPos.x * 1.7 + time * 1.5) * sin(vPos.z * 2.3 - time * 1.2), 0.0), 2.0);
+        col += vec3(0.65, 0.82, 0.88) * (fres * 0.85 + glint * 0.25);
+        gl_FragColor = vec4(col, 0.38 + shade * 0.28 + fres * 0.22);
+      }
+    `,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(f.x + f.w / 2, 0, f.z + f.d / 2);
+  mesh.renderOrder = 2;
+  scene.userData.water = mat;
+  return mesh;
 }
 
 function buildTrack() {
@@ -1775,6 +1905,7 @@ function buildTrack() {
   const ground = new THREE.Mesh(geom, groundMaterial(makeSurfaceAtlas()));
   ground.receiveShadow = true;
   scene.add(ground);
+  scene.add(buildWater());
 
   const base = new THREE.Mesh(
     new THREE.PlaneGeometry(2000, 2000),
@@ -2099,6 +2230,7 @@ function updateVisuals(frameDt) {
   chassis.position.set(state.position.x, state.position.y, state.position.z);
   chassis.quaternion.set(state.quat.x, state.quat.y, state.quat.z, state.quat.w);
 
+  if (scene.userData.water) scene.userData.water.uniforms.time.value += frameDt;
   if (scripted && !steerUi.dragging) steerUi.angle = input.steer * CONFIG.steer.wheelLock;
   const wheelEl = document.getElementById("wheel-rotor");
   if (wheelEl) wheelEl.style.transform = `rotate(${steerUi.angle}rad)`;
@@ -2411,6 +2543,7 @@ function report() {
         slipAngle: w.slipAngle,
         steerAngle: w.steerAngle,
         sinkDepth: w.sinkDepth,
+        water: w.water || 0,
         tireSquash: w.tireSquash,
         latFlex: w.latFlex,
         omega: w.omega,
@@ -2489,7 +2622,8 @@ function boot() {
     samplePixel,
     surfaceAt,
     groundHeight,
-    build: "iphone12pm-5",
+    build: "iphone12pm-6",
+    waterDepth,
     wheelAngle: () => steerUi.angle,
     lookAtWheel(id) {
       const w = wheels.find((wheel) => wheel.spec.id === id) || wheels[0];
